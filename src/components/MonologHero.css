@@ -1,0 +1,472 @@
+/* Hallmark · light paper · centred everything · black ink.
+ * macrostructure: centered Marquee Hero · single-family geometric sans (Geist)
+ * paper: white · ink: near-black · accent: none (near-monochrome)
+ * states covered (CTAs): default · hover · focus-visible · active
+ * contrast: pass (black ink on white paper, dark CTA on white paper)
+ */
+
+.m-hero {
+  position: relative;
+  z-index: 10;
+
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+
+  /* The user asked for exactly 5 vw gap on each side for the big bottom
+   * text. Locking it here means nav + pitch + wordmark all share the same
+   * 90 vw content area; the wordmark fills it edge-to-edge.
+   *
+   * padding-top reserves room for the fixed nav (which now leaves the
+   * grid flow) so the centred pitch doesn't get crowded against the
+   * header. Tracks the nav's vertical footprint with a generous clamp.
+   */
+  padding-block: clamp(2.5rem, 8vw, 5rem) 0;
+  padding-inline: 2vw;
+
+  /* Intentionally NO `overflow-x: clip` here. Per CSS Overflow L3, an
+   * element with `overflow-x: clip` (or `overflow-y: clip`) becomes a
+   * containing block for position: fixed descendants — which would
+   * anchor the scroll-driven wordmark (`.m-hero__wordmark-display`,
+   * position: fixed) to this scrolling section instead of the viewport.
+   * Symptom: the wordmark gets clipped at the section's bottom edge
+   * during scroll and the GSAP "scrub to top-left" animation never
+   * reaches the sticky-header position. The horizontal-overflow
+   * protection we used to need here is no longer required — the
+   * wordmark is position: fixed (out of flow) and the in-flow content
+   * (nav, pitch, wordmark-bar) all respects the 2 vw horizontal
+   * padding via grid + width: 100%.
+   */
+}
+
+/* ---------- Nav (sticky/fixed to top) ----------
+ * Slim, transparent, single-row flex. Three children:
+ *   [ .m-hero__nav-brand  →  flex: 1 ]   ← left spacer (wordmark overlays)
+ *   [ .m-hero__links      →  auto    ]   ← centred in the viewport
+ *   [ .m-hero__actions    →  flex: 1 ]   ← right-anchored inside its column
+ *
+ * The two flex: 1 spacers split the leftover row width equally, so
+ * the links sit between the wordmark (fixed-positioned overlay) and
+ * the actions regardless of how wide the screen is.
+ *
+ * Sticky positioning: position: fixed, lives at the top of the
+ * viewport from first paint onward — links + sound toggle + CTA
+ * persist as the user scrolls past the hero. The wordmark (the
+ * <HeroWordmark /> client component) animates from the bottom of the
+ * hero up to the top-left of the viewport and shares this header band
+ * with the nav: the wordmark is the logo (left), links are the menu
+ * (centre), actions live on the right.
+ *
+ * z-index 200 keeps the nav above section content but below the
+ * wordmark (z-index 300 in .m-hero__wordmark-display) so the wordmark
+ * reads as foreground text inside the header band.
+ */
+.m-hero__nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+
+  display: flex;
+  align-items: center;
+
+  /* Slim — was clamp(0.875rem, 2vw, 1.5rem); ~28 px tall band. */
+  padding-block: 0.5rem;
+  padding-inline: 2vw;
+
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  letter-spacing: -0.005em;
+
+  /* Global invert from globals.css applies (color: #ffffff,
+   * mix-blend-mode: difference). The nav floats at the top of the
+   * viewport, so it sits over whichever section is currently scrolled
+   * into view — invert keeps it legible across the whole page. */
+
+  /* Fully transparent — no background, no blur, no border. Content
+   * scrolls beneath cleanly. */
+}
+
+.m-hero__nav-brand {
+  /* Left flex spacer — keeps the links centred in the viewport. The
+   * wordmark (fixed, see .m-hero__wordmark-display) overlays this from
+   * outside the flex flow; it doesn't contribute to the spacer's
+   * intrinsic width. */
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.m-hero__links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-lg);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.m-hero__links a {
+  /* Inherit the shader-aware colour from .m-hero__nav (which holds
+   * --text-color-nav). Falling back to explicit ink would defeat
+   * the inversion. */
+  color: inherit;
+  text-decoration: none;
+  font-weight: 400;
+  font-size: 0.9375rem;
+
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.m-hero__links a:hover {
+  opacity: 0.6;
+}
+
+.m-hero__actions {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-md);
+}
+
+/* Sound-toggle — icon-only button, no chrome. Sits inline with the
+ * CTA like any other text glyph. */
+.m-hero__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+
+  background: transparent;
+  /* Inherit the shader-aware colour from .m-hero__nav. */
+  color: inherit;
+  border: none;
+  border-radius: 2px;
+
+  cursor: pointer;
+
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.m-hero__toggle:hover {
+  opacity: 0.6;
+}
+
+.m-hero__toggle:focus-visible {
+  outline: 2px solid var(--color-brand-focus);
+  outline-offset: 2px;
+}
+
+/* Primary CTA — text + arrow, no button chrome. Reads as a link so it
+ * doesn't visually outweigh the slim transparent header. */
+.m-hero__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+
+  font-weight: 500;
+  font-size: 0.9375rem;
+  letter-spacing: -0.005em;
+
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  /* Inherit the shader-aware colour from .m-hero__nav. */
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.m-hero__cta:hover {
+  opacity: 0.6;
+}
+
+.m-hero__cta:focus-visible {
+  outline: 2px solid var(--color-brand-focus);
+  outline-offset: 2px;
+}
+
+/* ---------- Centred pitch ---------- */
+
+.m-hero__pitch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-md);
+
+  max-width: 32rem;
+  width: 100%;
+  margin: 0 auto;
+
+  /* Global invert from globals.css applies (color: #ffffff,
+   * mix-blend-mode: difference). Children (mic icon, two paragraphs)
+   * inherit. */
+
+  /* Horizontal padding lives on .m-hero (5 vw each side). No need to
+   * duplicate it here.
+   */
+}
+
+.m-hero__icon {
+  width: 3rem;
+  height: 3rem;
+  /* Inherit the shader-aware colour from .m-hero__pitch. */
+  color: inherit;
+  margin-bottom: var(--space-xs);
+}
+
+.m-hero__para {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  letter-spacing: -0.003em;
+  /* Inherit the shader-aware colour from .m-hero__pitch. */
+  color: inherit;
+  margin: 0;
+  max-width: 36ch;
+}
+
+.m-hero__para + .m-hero__para {
+  margin-top: var(--space-xs);
+}
+
+/* ---------- Massive bottom wordmark ---------- */
+
+/* The bar is a positioning context; the wordmark itself is absolutely
+ * centred on it so it stays anchored to viewport centre regardless of width.
+ *
+ * Sizing math: "eventclassics" at Geist 800 with -0.05em letter-spacing
+ * has a glyph-row width of ~5.85em. To fill exactly the 90 vw content area
+ * (defined by the hero's 5 vw horizontal padding) the font-size must scale
+ * at 90 vw ÷ 5.85em ≈ 15.4 vw.
+ */
+
+.m-hero__wordmark-bar {
+  position: relative;
+  align-self: end;
+  width: 100%;
+  /* The wordmark inside is `position: fixed`, so the bar no longer
+   * participates in layout for the glyph itself — it just reserves the
+   * vertical space the bottom of the hero needs so the grid row sizes
+   * correctly. Tracks the wordmark's font-size to always accommodate
+   * the type.
+   */
+  height: clamp(2.5rem, 15.4vw, 30rem);
+  line-height: 0.78;
+}
+
+.m-hero__wordmark-display {
+  /* Always `position: fixed`; only `transform` is animated (translate +
+   * scale) so the scroll-driven motion stays on the compositor and
+   * never triggers layout / paint. transform-origin is the element's
+   * top-left corner so x/y position that corner precisely. */
+  position: fixed;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+
+  /* Bottom offset (gap between the wordmark baseline and the
+   * viewport's bottom edge) — read by the GSAP animation in
+   * HeroWordmark.tsx via getComputedStyle and used in the transform
+   * below. Overridden per-breakpoint via the media query at the
+   * bottom of this file: 5 vw on mobile (≤ 768 px), 2.5 vw on
+   * desktop and tablet (> 768 px). */
+  --wordmark-bottom-offset: 5vw;
+
+  /* Tighten the line-height below the bar's inherited 0.78 so the
+   * em-box's baseline sits flush with the line-box's bottom edge.
+   *
+   * The bar passes line-height: 0.78 down to the display span. With
+   * font-size 18 vw the line-box is 0.78 × 18 vw ≈ 14 vw, but the
+   * em-box is the full 18 vw — so the em-box overflows the line-box
+   * on both sides. The descender area (≈ 0.2 × font-size) sits below
+   * the visible baseline but inside the line-box, meaning the visible
+   * glyph row ends ~1.6 vw above the line-box bottom.
+   *
+   * The CSS transform anchors the *line-box* bottom at 100 vh −
+   * --wordmark-bottom-offset (it positions the line-box, not the
+   * glyphs), so without the line-height fix the CSS offset was
+   * rendering as a ~6.6 vw visible gap when the offset was 5 vw.
+   * GSAP ran into the same problem: its
+   * `y: viewportHeight - elementHeight - bottomPadding` was computing
+   * the line-box bottom, not the baseline.
+   *
+   * line-height: 0.6 (≈ 2 × 0.2 = the descender ratio) makes the
+   * em-box overflow symmetrically so the baseline lands exactly on
+   * the line-box's bottom edge. After this, the CSS offset equals
+   * the visible gap one-to-one across the whole 4 rem → 18 vw →
+   * 30 rem font-size range, the GSAP set() positions the baseline
+   * at 100 vh − --wordmark-bottom-offset (offsetHeight is now the
+   * line-box height), and the reduced-motion fallback (which never
+   * runs GSAP) also lands on the right number.
+   *
+   * Visually, the text rendering is unchanged — the em-box is what
+   * the font uses to lay out glyphs regardless of line-height. The
+   * change only affects the element's bounding rectangle, not the
+   * glyphs themselves.
+   */
+  line-height: 0.6;
+
+  /* Initial visual position: bottom-centre of the viewport, with
+   * 5 vw of breathing room below the glyph row on mobile, 2.5 vw on
+   * desktop and tablet — the @media block at the bottom of this file
+   * overrides the transform for ≥ 769 px. The 5 vw mobile value mirrors
+   * the hero's horizontal padding so the wordmark sits inside the same
+   * 90 vw content area it fills horizontally.
+   *
+   * The offset is hard-coded in both transform declarations (here and
+   * in the media query) rather than read from --wordmark-bottom-offset
+   * via var(). var() inside a transform prevents the browser from
+   * recognising the value as a translate3d() and stops it from
+   * promoting the element to its own GPU composite layer on first
+   * paint — which defeats the entire "promote from first paint"
+   * reason this translate3d(... , 0) exists in the first place. Without
+   * the layer, the GSAP scrub animation jitters because every frame
+   * has to re-rasterise the text on the CPU instead of just compositing
+   * a pre-rasterised layer on the GPU.
+   *
+   * --wordmark-bottom-offset is still defined on this element so the
+   * GSAP set() in HeroWordmark.tsx can read the active per-breakpoint
+   * value via getComputedStyle — it's just not used in this transform.
+   *
+   * GSAP (see HeroWordmark.tsx) overrides this on mount with the same
+   * offset (it reads --wordmark-bottom-offset from the wordmark's
+   * computed style), then scrubs toward the top-left "sticky header"
+   * state as the hero scrolls out of view. Keeping the CSS baseline
+   * in sync means the pre-GSAP first paint and any
+   * prefers-reduced-motion fallback position the wordmark identically.
+   *
+   * Uses translate3d(... , 0) instead of translate() so the browser
+   * promotes this element to its own GPU composite layer from first
+   * paint, before GSAP ever runs. Without the third arg, the compositor
+   * only promotes the layer once a 3D transform is detected — and that
+   * detection can cause a one-frame paint on first scroll. */
+  transform: translate3d(
+    calc(50vw - 50%),
+    calc(100vh - 100% - 5vw),
+    0
+  );
+
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-style: normal;
+  /* 90 vw ÷ 5.85em ≈ 15.4 vw → wordmark fills the 90 vw content area
+   * (hero padding-inline: 5 vw). At 375 → 1920 px this gives:
+   *   57.75 / 118.27 / 197.12 / 295.68 px font, with 5 vw gap on each
+   * side. Max cap at 30 rem (480 px) prevents the type from getting
+   * absurd on ultrawide viewports.
+   *
+   * The size shrink on scroll is done via `transform: scale()` in
+   * HeroWordmark, NOT by animating font-size — that would reflow every
+   * frame and tank the frame rate.
+   */
+  font-size: clamp(4rem, 18vw, 30rem);
+  letter-spacing: -0.05em;
+  text-transform: none;
+  white-space: nowrap;
+  /* Override the page-wide :where() invert from globals.css. The
+   * wordmark crosses section boundaries during its scroll-driven
+   * transform, and the mix-blend-mode difference blend can render
+   * as a clipped / split-colour seam at those boundaries (the
+   * compositor blends per-pixel against whatever backdrop is under
+   * the glyphs at each frame — when a single glyph straddles a
+   * section edge, its top half inverts against the light section
+   * and its bottom half against the dark one, which reads as a
+   * horizontal cut). Solid ink avoids the seam entirely. If a future
+   * iteration wants the invert back, isolate the element with
+   * `isolation: isolate` to keep the blend scoped to a single layer. */
+  color: var(--ink);
+  mix-blend-mode: normal;
+
+  /* Promote to its own layer so the scroll-driven transform stays on
+   * the GPU thread; this is the single biggest lever for 60fps.
+   *
+   * Intentionally NO `will-change: transform` — GSAP's own docs warn
+   * against it (see Top 5 ScrollTrigger Mistakes): "will-change can
+   * force excessive layer creation and eat up memory/GPU bandwidth."
+   * GSAP's `force3D: true` already promotes this element to its own
+   * GPU composite layer for the duration of the tween, so a permanent
+   * `will-change` hint is redundant overhead that lives on after the
+   * animation is done. */
+
+  /* Stay above every section's content AND the fixed nav (z-index 200)
+   * as it travels from the hero to the persistent top-left header
+   * position. The wordmark reads as the foreground logo inside the
+   * sticky header band. */
+  z-index: 300;
+}
+
+/* ---------- Desktop / tablet ---------- */
+
+/* On viewports wider than the mobile breakpoint the wordmark sits
+ * closer to the viewport edge — 2.5 vw instead of 5 vw.
+ *
+ * The full transform is duplicated here rather than overridden via
+ * --wordmark-bottom-offset because var() inside a transform breaks
+ * GPU layer promotion (see the long comment on the base transform
+ * above). The variable itself is still updated so the GSAP set() in
+ * HeroWordmark.tsx reads the matching per-breakpoint value via
+ * getComputedStyle. */
+@media (min-width: 769px) {
+  .m-hero__wordmark-display {
+    --wordmark-bottom-offset: 2.5vw;
+    transform: translate3d(
+      calc(50vw - 50%),
+      calc(100vh - 100% - 2.5vw),
+      0
+    );
+  }
+}
+
+/* ---------- Mobile collapse (keeps everything centred) ---------- */
+
+@media (max-width: 768px) {
+  .m-hero__nav {
+    gap: var(--space-md);
+  }
+
+  /* Drop the centre links below tablet — the nav still reads as a centred
+   * row with wordmark + actions; we never let a single-line affordance
+   * wrap (gate 49).
+   */
+  .m-hero__links {
+    display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  /* Drop the article so the CTA fits single-line on the smallest phones. */
+  .m-hero__cta > span {
+    display: none;
+  }
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .m-hero__toggle,
+  .m-hero__cta,
+  .m-hero__links a {
+    transition: none;
+  }
+
+  .m-hero__toggle:hover,
+  .m-hero__toggle:active,
+  .m-hero__cta:hover,
+  .m-hero__cta:active {
+    transform: none;
+  }
+}

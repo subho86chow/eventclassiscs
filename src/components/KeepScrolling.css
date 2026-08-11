@@ -1,0 +1,80 @@
+/* Hallmark · "Keep scrolling" kicker.
+ * Pinned near-black stage. A uniform grid of capsule outlines frames a
+ * pill-sized stadium whose perimeter carries marching
+ * "KEEP SCROLLING • " text. On scroll (GSAP ScrollTrigger, see
+ * KeepScrolling.tsx): grid columns drift vertically in alternating
+ * directions (centre column fixed), the grid fades, the stadium floods
+ * white, and a whiteout veil lands the stage on pure white as the pin
+ * releases.
+ */
+
+.keep-scrolling {
+  position: relative;
+  background: var(--ink);
+  /* SVG strokes use currentColor — must resolve to the paper ink, not
+   * the body's foreground (dark ink in light mode), or the grid pills
+   * vanish into the near-black background. */
+  color: var(--paper);
+
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+
+  overflow: hidden;
+}
+
+/* Whiteout veil — *above* the SVG in paint order (it comes last in the
+ * DOM), so it covers the marching text and stadium too as it fades in,
+ * landing the stage on pure white exactly when the pin releases. */
+.keep-scrolling__whiteout {
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The SVG covers the whole section. preserveAspectRatio="xMidYMid slice"
+ * in the JSX keeps the composition centred and crops at the edges, so the
+ * grid always frames the stadium regardless of viewport. */
+.keep-scrolling__art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Capsule grid — quiet enough to recede behind the stadium. */
+.keep-scrolling__grid {
+  opacity: 0.28;
+}
+
+/* Stadium outline — the focal point until the flood. */
+.keep-scrolling__stadium-stroke {
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+/* White body, faded in by the timeline (fill-opacity 0 → 1). */
+.keep-scrolling__stadium-fill {
+  fill: var(--paper);
+  fill-opacity: 0;
+}
+
+/* Marching text on the stadium perimeter. Fill is tweened light → grey
+ * by the timeline, so it stays hex for GSAP's colour parser. Sized for
+ * the 100 × 200 stadium (was 22 px on the 120 × 500 stadium — scaled
+ * with the perimeter to keep glyphs the same distance from the stroke). */
+.keep-scrolling__text {
+  /* NOTE: the site's --font-sans theme token is a circular var() and
+   * resolves to nothing, so reach for next/font's variable directly. */
+  font-family: var(--font-geist-sans), sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  fill: color-mix(in oklch, var(--paper) 90%, transparent);
+}
+
+/* Reduced motion: JS skips the ScrollTrigger setup and pauses the SMIL
+ * march, leaving the static initial frame. */

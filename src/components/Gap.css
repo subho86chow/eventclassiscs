@@ -1,0 +1,190 @@
+/* Hallmark · "We close that gap" section.
+ *
+ * The display line splits into two phrases ("WE CLOSE" left, "THE
+ * GAP" right) and is pinned to the viewport via a sticky wrapper. A
+ * scroll-driven GSAP timeline brings the two phrases together so they
+ * meet in the centre by the time the section's mid reaches the
+ * viewport's mid. Below the sticky wrapper sits the image placeholder
+ * and supporting copy, which come into view after the closure plays.
+ *
+ * Section height: min-height: 200vh. ScrollTrigger range
+ * "top top" → "center center" therefore gives ~50vh of scroll-driven
+ * distance for the animation — long enough for the user to feel the
+ * phrases sliding toward each other, short enough that it never drags.
+ */
+
+.gap {
+  position: relative;
+  background: var(--ink);
+  /* Text colour + mix-blend-mode inherited from globals.css. */
+
+  width: 100%;
+  /* Natural section height — entirely driven by the sticky wrapper.
+   * Sticky wrappers do participate in flow (they reserve their box
+   * height before sticking), so the section ends up 100 vh tall:
+   * the sticky wrapper itself. */
+  min-height: 0;
+
+  overflow-x: clip;
+}
+
+/* ---------- Sticky wrapper ---------- */
+
+.gap__sticky {
+  position: sticky;
+  top: 0;
+  /* z-index: 10 keeps the closing phrases + image + copy above
+   * subsequent sections while the closure animation is playing. */
+  z-index: 10;
+  height: 100vh;
+  width: 100%;
+
+  /* Flex column. align-items: center is critical — without it, the
+   * default `stretch` makes `.gap__below` span the full viewport width
+   * regardless of its max-width, so the image + copy end up
+   * off-centre. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ---------- Phrases (absolutely positioned at vertical centre) ---------- */
+
+/* The phrases sit at the vertical centre of the sticky wrapper (=
+ * viewport centre while sticky is engaged), visually overlapping the
+ * image. The display region is absolutely positioned with top: 50% +
+ * translateY(-50%), so its own vertical centre lands on the viewport
+ * centre. The phrase wrappers inside then position themselves at
+ * top: 50% of this region — i.e. the viewport centre. z-index 2 sits
+ * on top of the image + copy (z-index 1). */
+.gap__display {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  transform: translateY(-50%);
+  height: clamp(5rem, 10vw, 9rem);
+  z-index: 2;
+
+  font-family: var(--font-sans);
+  font-weight: 700;
+  /* Same scale as before — large display line that fills the band. */
+  font-size: clamp(2.75rem, 9vw, 10rem);
+  line-height: 0.92;
+  letter-spacing: -0.05em;
+  text-align: center;
+  /* Colour + invert inherited from globals.css. */
+
+  /* Phrases must stay on a single line so the gap they leave between
+   * them reads as empty horizontal space rather than a vertical split. */
+  white-space: nowrap;
+}
+
+/* Each phrase-wrap carries the initial off-screen overflow (8 vw on
+ * each side). They sit at the vertical centre of `.gap__display` —
+ * top: 50% + translateY(-50%) centres them on the display's midline.
+ * The wrappers don't need a transform for the phrases' GSAP x tween
+ * because GSAP writes its own transform on the inner `.gap__phrase`
+ * (a different element entirely). */
+.gap__phrase-wrap {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.gap__phrase-wrap--left {
+  /* 8 vw overflow on the left — must match OVERFLOW_RATIO in Gap.tsx. */
+  left: -8vw;
+}
+
+.gap__phrase-wrap--right {
+  /* 8 vw overflow on the right — must match OVERFLOW_RATIO in Gap.tsx. */
+  right: -8vw;
+}
+
+.gap__phrase {
+  display: inline-block;
+  white-space: nowrap;
+  /* font-size / weight / letter-spacing inherit from .gap__display */
+}
+
+/* ---------- Bottom region: image + copy ---------- */
+
+/* flex: 1 1 auto so this region takes whatever vertical space remains
+ * after the top region. Image + copy are vertically + horizontally
+ * centred within it — they stay put (no animation) until the sticky
+ * releases at the end of the section.
+ *
+ * No explicit width / margin-inline — the parent `.gap__sticky` has
+ * `align-items: center`, which centres us horizontally. The `max-width`
+ * caps the copy + image at a comfortable measure. */
+.gap__below {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.75rem, 1.5vw, 1.5rem);
+  padding-block: clamp(1rem, 3vw, 2rem);
+  padding-inline: clamp(var(--space-md), 5vw, var(--space-2xl));
+  max-width: 36rem;
+  width: 100%;
+}
+
+.gap__image {
+  display: block;
+  width: clamp(180px, 22vw, 320px);
+  aspect-ratio: 3 / 4; /* portrait orientation matching a product photo */
+  margin-block: clamp(1rem, 2vw, 1.5rem);
+
+  /* Soft drop shadow to lift the placeholder off the page. */
+  filter: drop-shadow(
+    0 24px 48px color-mix(in oklch, var(--ink) 18%, transparent)
+  );
+}
+
+.gap__image-inner {
+  width: 100%;
+  height: 100%;
+
+  /* Placeholder "photo" — a warm beige gradient with a label. Swap this
+   * out for <Image src="/products/something.jpg" ... /> when ready. */
+  background:
+    linear-gradient(
+      135deg,
+      oklch(78% 0.04 70) 0%,
+      oklch(60% 0.06 55) 60%,
+      oklch(45% 0.05 35) 100%
+    );
+  border-radius: 4px;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-block-end: var(--space-md);
+}
+
+.gap__image-label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+@media (max-width: 768px) {
+  .gap__image {
+    width: 60%;
+  }
+}
+
+.gap__copy {
+  margin: 0;
+
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: clamp(0.875rem, 1.1vw, 1.0625rem);
+  line-height: 1.55;
+  letter-spacing: -0.003em;
+  text-align: center;
+}

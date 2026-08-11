@@ -1,0 +1,47 @@
+/* Hallmark · page chrome · top-right rotating logo.
+ * Fixed top-right, sits above the hero (z-20) but doesn't intercept clicks
+ * (pointer-events: none) so the hero CTAs remain interactive.
+ *
+ * Sized at 60 vw × 60 vw per the brief — the logo occupies a dominant
+ * square in the top-right corner. Scale + camera distance in the .tsx
+ * are tuned so the GLB fills ~100 % of the canvas.
+ */
+
+.rotating-logo {
+  position: fixed;
+  top: clamp(0.75rem, 1.5vw, 1.5rem);
+  right: clamp(0.75rem, 1.5vw, 1.5rem);
+  z-index: 20;
+  pointer-events: none;
+
+  /* 60 % of viewport width — the user asked for the logo to occupy this
+   * much horizontal real estate. Height matches so the canvas is square.
+   */
+  width: 60vw;
+  height: 60vw;
+  max-width: 90vh;
+  max-height: 90vh;
+
+  /* Soft shadow so the glass sits on the page with depth, not as a flat
+   * sticker — keeps it visually integrated with the centered hero below.
+   */
+  filter: drop-shadow(0 12px 36px color-mix(in oklch, var(--color-foreground) 22%, transparent));
+}
+
+/* The user can hover the corner and have the logo react — but only when
+ * they explicitly reach for it. Tiny affordance, not a discoverable
+ * feature; remains aria-hidden so screen readers skip it.
+ */
+@media (hover: hover) {
+  .rotating-logo:hover {
+    transform: scale(1.04);
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+/* Reduced motion: keep the static 35° tilt, stop the Y spin. */
+@media (prefers-reduced-motion: reduce) {
+  .rotating-logo {
+    --rotate-paused: 1;
+  }
+}

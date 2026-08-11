@@ -1,0 +1,321 @@
+/* Hallmark · "What we can help with" / testimonials section.
+ * Two-column layout: left = rotating testimonial carousel + pager +
+ * byline + progress bar; right = services list with hover-revealed image
+ * that sits at the right edge, vertically aligned to the hovered row.
+ *
+ * White-bg + black-text variant: every light/dark value is swapped from
+ * the dark-bg original. Placeholder image gradient + the white text on top
+ * stay as-is.
+ */
+
+.services {
+  position: relative;
+  background: var(--paper);
+
+  width: 100%;
+  padding-block: clamp(6rem, 14vw, 14rem);
+  overflow: hidden;
+}
+
+.services__inner {
+  position: relative;
+  max-width: 90rem;
+  margin-inline: auto;
+  padding-inline: clamp(var(--space-md), 5vw, var(--space-2xl));
+
+  display: grid;
+  /* Three columns: testimonial (30 %), services list (45 %),
+   * image (25 %). Using fr (6 / 9 / 5 = 20fr) keeps the proportions
+   * stable across viewports while letting the column gap be subtracted
+   * from the fr total. */
+  grid-template-columns: minmax(0, 6fr) minmax(0, 9fr) minmax(0, 5fr);
+  column-gap: clamp(3rem, 6vw, 6rem);
+  row-gap: clamp(2rem, 4vw, 4rem);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .services__inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ───────── Col 1 — testimonial carousel ───────── */
+
+.services__left {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  padding-top: clamp(0.5rem, 1.5vw, 1rem);
+}
+
+.services__header-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.services__pager {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+.services__arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  background: transparent;
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.services__arrow:hover:not(:disabled) {
+  background: color-mix(in oklch, var(--ink) 12%, transparent);
+}
+
+.services__arrow:disabled {
+  cursor: not-allowed;
+}
+
+.services__pager-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.services__label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+/* Quote area — all testimonials stacked in the same grid cell; the active
+ * one fades in. Reserves enough height that swapping doesn't shift
+ * surrounding layout. */
+.services__quote-area {
+  position: relative;
+  min-height: clamp(15rem, 30vw, 24rem);
+  display: grid;
+}
+
+.services__quote {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2vw, 1.5rem);
+
+  opacity: 0;
+  transform: translateY(0.5rem);
+  pointer-events: none;
+  transition:
+    opacity 600ms var(--ease-out),
+    transform 600ms var(--ease-out);
+}
+
+.services__quote--active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.services__quote-text {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: clamp(1rem, 1.4vw, 1.25rem);
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  max-width: 36ch;
+}
+
+.services__author {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.services__avatar {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
+  flex-shrink: 0;
+}
+
+.services__author-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.services__author-name {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.9375rem;
+}
+
+.services__author-role {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 0.8125rem;
+}
+
+/* Progress bar — CSS-animated fill that loops every 15 s. The JS
+ * testimonial rotation resets the animation each cycle. */
+.services__progress {
+  width: 100%;
+  max-width: 28rem;
+  height: 2px;
+  background: color-mix(in oklch, var(--ink) 12%, transparent);
+  overflow: hidden;
+  margin-top: auto;
+}
+
+.services__progress-bar {
+  width: 100%;
+  height: 100%;
+  background: var(--ink);
+  transform-origin: left center;
+  transform: scaleX(0);
+  animation: services-progress-fill 15s linear infinite;
+}
+
+@keyframes services-progress-fill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .services__progress-bar {
+    animation: none;
+    transform: scaleX(1);
+  }
+}
+
+/* ───────── Col 2 — services list ───────── */
+
+.services__right {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  padding-top: clamp(0.5rem, 1.5vw, 1rem);
+}
+
+.services__label-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.services__dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--ink);
+  flex-shrink: 0;
+}
+
+.services__label-text {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.services__list {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.25rem, 0.5vw, 0.5rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.services__item {
+  font-family: var(--font-display, var(--font-sans));
+  font-weight: 600;
+  font-size: clamp(2.5rem, 5.5vw, 5rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  cursor: pointer;
+  transform: translateX(0);
+  transition:
+    color 220ms var(--ease-out),
+    transform 320ms var(--ease-out);
+}
+
+.services__item:hover,
+.services__item--active,
+.services__item:focus-visible {
+  transform: translateX(0.5rem);
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .services__item:hover,
+  .services__item--active,
+  .services__item:focus-visible {
+    transform: none;
+  }
+}
+
+/* ───────── Col 3 — image (in grid flow, updates with hover) ───────── */
+
+.services__image-col {
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.services__hover-image {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 4px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: clamp(0.6rem, 1vw, 0.9rem);
+  box-shadow:
+    0 8px 24px color-mix(in oklch, var(--ink) 18%, transparent);
+
+  /* Crossfade when hover changes the gradient. */
+  transition: opacity 360ms var(--ease-out);
+  animation: services-image-fade-in 360ms var(--ease-out);
+}
+
+.services__hover-image--placeholder {
+  background: color-mix(in oklch, var(--paper) 94%, transparent);
+  border: 1px dashed color-mix(in oklch, var(--ink) 18%, transparent);
+}
+
+.services__hover-image-label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+@keyframes services-image-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .services__hover-image {
+    animation: none;
+  }
+}

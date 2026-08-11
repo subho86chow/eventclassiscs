@@ -1,0 +1,175 @@
+/* Hallmark · Brands section ("Brands we've helped").
+ * White surface that flows continuously from the white hero — no dark
+ * break. Hairline rules above, between, and below the two rows. Logo
+ * cells use a centered wordmark placeholder (swap for SVG once real
+ * assets land).
+ */
+
+.brands {
+  background: var(--paper);
+  /* Text colour + mix-blend-mode inherited from globals.css base
+   * layer (per-pixel invert against the section bg). */
+
+  /* Full-bleed section; the inner div constrains the content width. */
+  width: 100%;
+  padding-block: clamp(4rem, 8vw, 8rem);
+}
+
+.brands__top {
+  /* Header label container — sticks to the left, no 30 vw offset. */
+  max-width: 90rem; /* ~1440px */
+  margin-inline: auto;
+  padding-inline: clamp(var(--space-md), 5vw, var(--space-2xl));
+}
+
+.brands__inner {
+  max-width: 90rem; /* ~1440px */
+  margin-inline: auto;
+  padding-inline: clamp(var(--space-md), 5vw, var(--space-2xl));
+}
+
+/* Desktop + tablet: rows get pushed 30 vw from the left so the section
+ * reads as right-anchored editorial chrome. Header label (in .brands__top)
+ * stays at the left edge. Mobile stays edge-to-edge. */
+@media (min-width: 768px) {
+  .brands__inner {
+    padding-left: 30vw;
+  }
+}
+
+/* ---------- Header row ---------- */
+
+.brands__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+
+  padding-block: var(--space-md) var(--space-sm);
+}
+
+.brands__dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--ink);
+  flex-shrink: 0;
+}
+
+.brands__label {
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  letter-spacing: -0.005em;
+  /* Colour + invert inherited from globals.css. */
+}
+
+/* ---------- Hairline rules ---------- */
+
+.brands__rule {
+  appearance: none;
+  border: 0;
+  border-top: 1px solid color-mix(in oklch, var(--ink) 12%, transparent);
+  margin: 0;
+}
+
+/* ---------- Row grid ---------- */
+
+.brands__row {
+  display: grid;
+  /* 4 equal columns on desktop, collapse gracefully below. */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0; /* hairline rules separate; no internal gutter */
+}
+
+@media (max-width: 1024px) {
+  .brands__row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .brands__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------- Cell (logo + caption) ---------- */
+
+.brands__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  padding-block: clamp(2.5rem, 6vw, 5rem);
+  padding-inline: var(--space-md);
+}
+
+/* ---------- Logo placeholder ---------- */
+
+.brands__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Reserved canvas height so all cells line up vertically. */
+  height: 5rem;
+  width: 100%;
+  max-width: 16rem;
+  margin-bottom: var(--space-md);
+
+  /* Subtle hover affordance. */
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.brands__cell:hover .brands__logo {
+  opacity: 0.55;
+}
+
+.brands__wordmark {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 1.25rem;
+  letter-spacing: 0.01em;
+  /* Colour + invert inherited from globals.css. */
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Variant typographic voices. Just enough variation to read as eight
+ * distinct logos; once you have real SVGs these go away. */
+
+.brands__logo--italic .brands__wordmark {
+  font-style: italic;
+  font-weight: 600;
+}
+
+.brands__logo--condensed .brands__wordmark {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.brands__logo--wide .brands__wordmark {
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+}
+
+.brands__logo--monogram .brands__wordmark {
+  font-weight: 800;
+  font-size: 2.75rem;
+  letter-spacing: -0.03em;
+}
+
+/* ---------- Caption ---------- */
+
+.brands__name {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+}

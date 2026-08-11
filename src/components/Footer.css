@@ -1,0 +1,252 @@
+/* Hallmark · site footer.
+ * Two-region layout on a dark canvas:
+ *   left column  · large editorial nav list
+ *   right column · 3D rotating logo on top, then "(STUDIO DETAILS)"
+ *                 and "(SOCIALS)" stacked side-by-side on desktop and
+ *                 collapsing to a single column on mobile.
+ */
+
+.footer {
+  position: relative;
+  background: var(--ink);
+
+  width: 100%;
+  padding-block: clamp(5rem, 10vw, 10rem);
+}
+
+.footer__inner {
+  max-width: 90rem;
+  margin-inline: auto;
+  padding-inline: clamp(var(--space-md), 5vw, var(--space-2xl));
+
+  display: grid;
+  /* Left column ~35 %, right column ~65 % (3D on top, details+socials
+   * below). */
+  grid-template-columns: minmax(0, 7fr) minmax(0, 13fr);
+  column-gap: clamp(2rem, 4vw, 4rem);
+  row-gap: clamp(3rem, 6vw, 6rem);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .footer__inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ───────── Nav column (left) ───────── */
+
+.footer__nav-col {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 3vw, 2rem);
+}
+
+.footer__nav-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.footer__dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--paper) 80%, transparent);
+  flex-shrink: 0;
+}
+
+.footer__nav-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.footer__nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.footer__nav-item {
+  border-top: 1px solid color-mix(in oklch, var(--paper) 14%, transparent);
+}
+
+.footer__nav-item:last-child {
+  border-bottom: 1px solid color-mix(in oklch, var(--paper) 14%, transparent);
+}
+
+.footer__nav-link {
+  display: block;
+  padding-block: clamp(0.6rem, 1.2vw, 0.9rem);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: clamp(1rem, 2.2vw, 2rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  text-decoration: none;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    transform 360ms var(--ease-out);
+}
+
+.footer__nav-link:hover,
+.footer__nav-link:focus-visible {
+  transform: translateX(0.5rem);
+  outline: none;
+}
+
+.footer__nav-link:focus-visible {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--paper) 60%, transparent);
+  text-underline-offset: 0.18em;
+}
+
+/* ───────── Right column ───────── */
+
+.footer__right-col {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3rem, 6vw, 5rem);
+}
+
+/* 3D object — top of the right column. Override RotatingLogo's default
+ * fixed-corner positioning so it fills this container instead of
+ * pinning to the viewport. */
+.footer__threed-wrap {
+  position: relative;
+  width: 100%;
+  height: clamp(18rem, 32vw, 28rem);
+}
+
+.footer .rotating-logo,
+.footer [class*="rotating-logo"] {
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  z-index: 0;
+}
+
+/* Studio details + Socials — side by side on desktop, stacked on mobile. */
+.footer__details-socials {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: clamp(2rem, 4vw, 4rem);
+  row-gap: clamp(1.5rem, 3vw, 2rem);
+  align-items: start;
+}
+
+@media (max-width: 700px) {
+  .footer__details-socials {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.footer__micro-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+/* ───── Studio details ───── */
+
+.footer__details {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 1.5vw, 1rem);
+}
+
+.footer__email {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-family: var(--font-sans);
+  font-size: clamp(0.9375rem, 1.2vw, 1.0625rem);
+  line-height: 1.4;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--paper) 40%, transparent);
+  text-underline-offset: 0.2em;
+  align-self: flex-start;
+  margin-top: clamp(0.5rem, 1vw, 0.75rem);
+  transition: text-decoration-color var(--dur-fast) var(--ease-out);
+}
+
+.footer__email:hover,
+.footer__email:focus-visible {
+  text-decoration-color: var(--paper);
+  outline: none;
+}
+
+.footer__email-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 1px solid color-mix(in oklch, var(--paper) 50%, transparent);
+  border-radius: 50%;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.footer__email-text {
+  text-decoration: inherit;
+}
+
+.footer__location {
+  margin: clamp(0.5rem, 1vw, 0.75rem) 0 0 0;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: clamp(0.9375rem, 1.1vw, 1rem);
+  line-height: 1.5;
+  max-width: 24ch;
+}
+
+/* ───── Socials ───── */
+
+.footer__socials {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 1.5vw, 1rem);
+}
+
+.footer__socials-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.4rem, 0.8vw, 0.6rem);
+}
+
+.footer__socials-item {
+  display: flex;
+}
+
+.footer__socials-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.footer__socials-link:hover,
+.footer__socials-link:focus-visible {
+  outline: none;
+}

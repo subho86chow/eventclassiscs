@@ -1,0 +1,303 @@
+/* Hallmark · FAQ section.
+ * Two-column white-bg layout: photo + CTA card on the left, big headline
+ * + accordion on the right. GSAP animates the accordion expand/collapse
+ * with a smooth height + opacity tween.
+ *
+ * Dark→light inversion: every "oklch(96%) → oklch(15%)" with the same
+ * alpha. The photo + cta button preserve their accent treatments.
+ */
+
+.faq {
+  position: relative;
+  background: var(--paper);
+
+  width: 100%;
+  padding-block: clamp(6rem, 12vw, 12rem);
+}
+
+.faq__inner {
+  position: relative;
+  max-width: 90rem;
+  margin-inline: auto;
+  padding-inline: clamp(var(--space-md), 5vw, var(--space-2xl));
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  column-gap: clamp(2rem, 5vw, 5rem);
+  row-gap: clamp(2rem, 4vw, 4rem);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .faq__inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ───────── Col 1 — photo + CTA ───────── */
+
+.faq__left {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  position: sticky;
+  top: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+@media (max-width: 900px) {
+  .faq__left {
+    position: static;
+  }
+}
+
+.faq__label-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.faq__dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--ink);
+  flex-shrink: 0;
+}
+
+.faq__label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.faq__photo {
+  width: 100%;
+  max-width: 18rem;
+  aspect-ratio: 4 / 5;
+  border-radius: 4px;
+  background:
+    linear-gradient(
+      135deg,
+      oklch(35% 0.05 60) 0%,
+      oklch(25% 0.04 30) 100%
+    );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.faq__photo-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.faq__cta {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 1.5vw, 1rem);
+  max-width: 18rem;
+}
+
+.faq__cta-heading {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: clamp(1rem, 1.4vw, 1.25rem);
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+}
+
+.faq__cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+
+  align-self: flex-start;
+
+  padding: 0.625rem 1rem;
+  border: 1px solid color-mix(in oklch, var(--ink) 50%, transparent);
+  border-radius: 2px;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.faq__cta-button:hover {
+  background: color-mix(in oklch, var(--ink) 8%, transparent);
+  border-color: color-mix(in oklch, var(--paper) 80%, transparent);
+}
+
+/* ───────── Col 2 — headline + accordion ───────── */
+
+.faq__right {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 4vw, 3rem);
+}
+
+.faq__headline {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: clamp(1.75rem, 4vw, 3.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  max-width: 22ch;
+}
+
+.faq__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.faq__item {
+  border-top: 1px solid color-mix(in oklch, var(--ink) 14%, transparent);
+}
+
+.faq__item:last-child {
+  border-bottom: 1px solid color-mix(in oklch, var(--ink) 14%, transparent);
+}
+
+.faq__question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+
+  padding-block: clamp(1rem, 1.8vw, 1.5rem);
+
+  background: transparent;
+  border: 0;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: clamp(0.9375rem, 1.15vw, 1.0625rem);
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.faq__question:hover,
+.faq__question:focus-visible {
+  outline: none;
+}
+
+.faq__question:focus-visible {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--paper) 60%, transparent);
+  text-underline-offset: 0.25em;
+}
+
+.faq__question-text {
+  flex: 1;
+}
+
+/* Toggle indicator — small hollow circle that rotates 45° when the item
+ * is open, forming an × from the +/close icon family. */
+.faq__toggle {
+  flex-shrink: 0;
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 1px solid color-mix(in oklch, var(--ink) 70%, transparent);
+  border-radius: 50%;
+  position: relative;
+  transition:
+    transform 360ms var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.faq__toggle::before,
+.faq__toggle::after {
+  content: "";
+  position: absolute;
+  background: var(--ink);
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.faq__toggle::before {
+  /* horizontal bar — vertical-line pseudo on a circle reads as + when
+   * the circle is upright. */
+  top: 50%;
+  left: 2px;
+  right: 2px;
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+.faq__toggle::after {
+  /* vertical bar — closes the + into an × via rotation. */
+  left: 50%;
+  top: 2px;
+  bottom: 2px;
+  width: 1px;
+  transform: translateX(-50%);
+}
+
+.faq__item--open .faq__toggle {
+  transform: rotate(45deg);
+  background: color-mix(in oklch, var(--ink) 12%, transparent);
+  border-color: var(--ink);
+}
+
+/* Answer wrapper — CSS-driven expand/collapse via grid-template-rows
+ * transition: 0fr → 1fr. This is the modern, GPU-friendly way to animate
+ * auto-sized height: the browser interpolates the row track size without
+ * per-frame layout, and the inner content's overflow: hidden + min-height:
+ * 0 clips cleanly during the transition. Replaces the previous GSAP
+ * `height` tween, which forced synchronous layout every frame and was the
+ * worst jank source on click. */
+.faq__answer {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.35s var(--ease-out),
+    opacity 0.35s var(--ease-out);
+}
+
+/* Direct children clip during the transition. min-height: 0 is required
+ * in Chrome / Edge for `0fr` to actually collapse to zero. */
+.faq__answer > * {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.faq__item--open .faq__answer {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.faq__answer-text {
+  margin: 0 0 clamp(1rem, 1.8vw, 1.5rem) 0;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: clamp(0.875rem, 1vw, 0.9375rem);
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+  max-width: 56ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Snap open / closed — no animation. The answer still toggles via the
+   * button; it just appears instantly instead of transitioning. */
+  .faq__toggle,
+  .faq__answer {
+    transition: none;
+  }
+}

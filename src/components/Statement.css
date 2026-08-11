@@ -1,0 +1,203 @@
+/* Hallmark · editorial "Section 01/02" statement.
+ * Dark canvas, two-column layout: narrow left column for the pagination
+ * arrow + 15+ stat, wide right column for the big editorial copy,
+ * bottom-right byline.
+ */
+
+.statement {
+  background: var(--ink);
+  /* Text colour + mix-blend-mode inherited from globals.css. */
+
+  width: 100%;
+  padding-block: clamp(4rem, 8vw, 8rem);
+}
+
+.statement__inner {
+  max-width: 90rem;
+  margin-inline: auto;
+  padding-inline: clamp(var(--space-md), 5vw, var(--space-2xl));
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  grid-template-areas:
+    "pager  pager"
+    "left   right"
+    "byline byline";
+  row-gap: clamp(2rem, 5vw, 4rem);
+  column-gap: clamp(2rem, 5vw, 5rem);
+}
+
+/* Collapse to single column on narrow viewports */
+@media (max-width: 768px) {
+  .statement__inner {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "pager"
+      "left"
+      "right"
+      "byline";
+  }
+}
+
+/* ---------- Pager (top-left) ---------- */
+
+.statement__pager {
+  grid-area: pager;
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+}
+
+.statement__arrows {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.statement__arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+
+  background: transparent;
+  /* Colour + invert inherited from globals.css. */
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.statement__arrow:hover:not(:disabled) {
+  background: color-mix(in oklch, var(--paper) 12%, transparent);
+}
+
+.statement__arrow:disabled {
+  cursor: not-allowed;
+}
+
+.statement__pager-count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- Stat block (left column) ---------- */
+
+.statement__left {
+  grid-area: left;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.statement__stat {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: clamp(4rem, 8vw, 7.5rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  /* Colour + invert inherited from globals.css. */
+}
+
+.statement__caption {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: clamp(0.9375rem, 1.2vw, 1.0625rem);
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  margin: 0;
+  max-width: 22ch;
+}
+
+/* ---------- Editorial copy (right column) ---------- */
+
+.statement__right {
+  grid-area: right;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  align-self: start;
+}
+
+.statement__copy {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 3.6vw, 3.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  /* Colour + invert inherited from globals.css. */
+  margin: 0;
+  max-width: 22ch;
+}
+
+/* Each character is its own span so GSAP can scrub opacity per letter.
+ * display: inline-block keeps each glyph in the inline flow while giving
+ * it its own animation target. The dim default matches the stagger
+ * starting value so the pre-hydration state matches the first frame of the
+ * scrub. */
+.statement__letter {
+  display: inline-block;
+  opacity: 0.1;
+}
+
+/* Reduced-motion: no scroll-driven reveal — letters stay fully legible
+ * from the start. */
+@media (prefers-reduced-motion: reduce) {
+  .statement__letter {
+    opacity: 1;
+  }
+}
+
+/* ---------- Byline (bottom-right) ---------- */
+
+.statement__byline {
+  grid-area: byline;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+
+  padding-top: clamp(2rem, 5vw, 4rem);
+}
+
+.statement__avatar {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, oklch(40% 0.04 60), oklch(30% 0.05 30));
+  /* Colour + invert inherited from globals.css. */
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  letter-spacing: -0.01em;
+
+  flex-shrink: 0;
+}
+
+.statement__byline-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.statement__byline-name {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  letter-spacing: -0.005em;
+  /* Colour + invert inherited from globals.css. */
+}
+
+.statement__byline-role {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 0.8125rem;
+}

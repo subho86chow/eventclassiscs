@@ -1,26 +1,177 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-paper: var(--paper);
+  --color-paper-edge: var(--paper-edge);
+  --color-paper-elev: var(--paper-elev);
+  --color-ink: var(--ink);
+  --color-ink-dim: var(--ink-dim);
+
+  --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --font-display: var(--font-sans);
+
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-hover: var(--brand-accent-hover);
+  --color-brand-accent-ink: var(--brand-accent-ink);
+  --color-brand-focus: var(--brand-focus);
+  --color-brand-error: var(--brand-error);
+  --color-brand-success: var(--brand-success);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* Light paper · black ink · near-monochrome (chroma ≥ 0.005 across
+   * every neutral to clear Hallmark gate 22).
+   * Anchor hue 240 — a faint cool tint, just enough to break the
+   * "pure flat grey" tell.
+   */
+  --paper:        oklch(99% 0.005 240);
+  --paper-edge:   oklch(94% 0.005 240);
+  --paper-elev:   oklch(96% 0.005 240);
+  --ink:          oklch(15% 0.005 240);
+  --ink-dim:      oklch(38% 0.005 240);
+
+  /* shadcn mirrors — kept so future shadcn primitives render correctly. */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: oklch(99% 0.005 240);
+  --card-foreground: var(--ink);
+  --popover: oklch(99% 0.005 240);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: oklch(96% 0.005 240);
+  --secondary-foreground: var(--ink);
+  --muted: oklch(96% 0.005 240);
+  --muted-foreground: var(--ink-dim);
+  --accent: oklch(94% 0.005 240);
+  --accent-foreground: var(--ink);
+  --destructive: oklch(58% 0.20 25);
+  --border: oklch(88% 0.005 240);
+  --input: oklch(88% 0.005 240);
+  --ring: oklch(38% 0.005 240);
+  --chart-1: oklch(0.87 0.005 240);
+  --chart-2: oklch(0.556 0.005 240);
+  --chart-3: oklch(0.439 0.005 240);
+  --chart-4: oklch(0.371 0.005 240);
+  --chart-5: oklch(0.269 0.005 240);
+  --radius: 0.625rem;
+  --sidebar: oklch(99% 0.005 240);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: oklch(96% 0.005 240);
+  --sidebar-primary-foreground: var(--ink);
+  --sidebar-accent: oklch(96% 0.005 240);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: oklch(88% 0.005 240);
+  --sidebar-ring: oklch(38% 0.005 240);
+
+  /* Brand tokens — kept neutral-monochrome (no chromatic accent). */
+  --brand-accent:        var(--ink);
+  --brand-accent-hover:  oklch(25% 0.005 240);
+  --brand-accent-ink:    var(--paper);
+  --brand-focus:         oklch(58% 0.005 240);
+  --brand-error:         oklch(58% 0.20 25);
+  --brand-success:       oklch(58% 0.14 152);
+
+  /* 4 pt spacing scale. */
+  --space-2xs: 0.25rem;
+  --space-xs:  0.5rem;
+  --space-sm:  0.75rem;
+  --space-md:  1.25rem;
+  --space-lg:  2rem;
+  --space-xl:  3rem;
+  --space-2xl: 4.5rem;
+  --space-3xl: 6.5rem;
+
+  /* Easings + durations. */
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:       cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out:   cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast:      150ms;
+  --dur-normal:    220ms;
+}
+
+.dark {
+  /* Dark variant kept available for future pages that flip. */
+  --paper:        oklch(11% 0.008 60);
+  --paper-edge:   oklch(5%  0.005 60);
+  --paper-elev:   oklch(18% 0.008 60);
+  --ink:          oklch(94% 0.005 60);
+  --ink-dim:      oklch(72% 0.005 60);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground;
+  }
+  /* Per-pixel invert for every text element on every bg. White text +
+   * mix-blend-mode: difference means the compositor flips each glyph
+   * against whatever pixel sits behind it on every frame, so text
+   * stays continuously legible through section transitions (light
+   * bg → black ink, dark bg → light ink, gradient → blended). No JS
+   * in the loop — the GPU does it at compositor speed.
+   *
+   * :where() keeps specificity at 0 so any explicit colour on a
+   * section / component overrides this freely. SVG fill / stroke,
+   * borders, backgrounds, and shadows are deliberately NOT in this
+   * list — they should not blend. */
+  :where(
+    h1, h2, h3, h4, h5, h6,
+    p, a, span, button, li, dt, dd,
+    label, time, small, strong, em, code,
+    figcaption, blockquote
+  ) {
+    color: #ffffff;
+    mix-blend-mode: difference;
+  }
+  html {
+    @apply font-sans;
+  }
 }

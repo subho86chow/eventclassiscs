@@ -1,0 +1,66 @@
+/* LiquidMetalBg — full-bleed WebGL canvas that IS the hero background.
+ *
+ * Layering contract (read together with MonologHero.css):
+ *   .m-hero                z-index: 10  ← stacking-context root (section)
+ *   .liquid-metal-bg       z-index: -1  ← inside the section's context,
+ *                                          below every non-negative layer
+ *   .m-hero__pitch         (static)     ← level 3 → above the shader
+ *   .m-hero__wordmark-bar  (relative)   ← level 6 → above the shader
+ *   .m-hero__nav           z-index: 200 ← fixed nav above the shader
+ *   .m-hero__wordmark      z-index: 300 ← bottom wordmark above the shader
+ *
+ * Why z-index: -1 inside a stacking context: the section declares
+ * `z-index: 10` which makes it the root of a new stacking context.
+ * Inside that context, in-flow elements like the pitch would paint
+ * BELOW a positioned child with z-index: 1. Negative z-index is the
+ * established pattern for "background of a stacking context" — it
+ * lifts the shader above the section's transparent box but below every
+ * painted descendant.
+ */
+
+.liquid-metal-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+
+  /* Cover the entire hero including any vertical overflow from the
+   * fixed nav (which lives outside the section's content flow but
+   * visually overlaps the top of the hero). */
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  /* The canvas never receives pointer events — every interaction on
+   * the hero (nav links, CTA, sound toggle) must still hit its real
+   * target. */
+  pointer-events: none;
+
+  /* GPU-composited so any subsequent scroll/repaint on the hero
+   * doesn't trigger a re-rasterisation of the WebGL framebuffer.
+   *
+   * Intentionally NO `will-change: transform` — HeroWordmark.tsx's own
+   * comments document why: a permanent will-change hint "can force
+   * excessive layer creation and eat up memory/GPU bandwidth." The
+   * WebGL canvas is already a heavy GPU consumer; adding another
+   * permanently-promoted layer tip the compositor budget past the
+   * point where the wordmark's scroll-driven transform stays smooth.
+   */
+  contain: layout paint;
+}
+
+.liquid-metal-bg > * {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Honour reduced motion: the shader's per-frame animation is the only
+ * motion this component owns. The LiquidMetal component itself doesn't
+ * expose a static flag, so this rule documents the intent for future
+ * edits — anything added here must be gated on the media query. */
+@media (prefers-reduced-motion: reduce) {
+  .liquid-metal-bg {
+    /* No animation/transition is declared on this element. */
+  }
+}
