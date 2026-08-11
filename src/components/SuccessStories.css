@@ -64,6 +64,44 @@
   }
 }
 
+/* ---------- Grid placement ----------
+ * Kept here rather than inline so the ≤960px rule below can unwind it into
+ * a single auto-flowed column. Each project element carries only its row
+ * index as `--ss-row`. */
+
+.success-stories__label-col {
+  grid-column: 1;
+  /* `1 / -1` spans row 1 to the last auto-generated row. */
+  grid-row: 1 / -1;
+}
+
+.success-stories__divider {
+  grid-column: 2 / 4;
+  grid-row: var(--ss-row);
+}
+
+.success-stories__image-figure {
+  grid-column: 2;
+  grid-row: var(--ss-row);
+}
+
+.success-stories__text-block {
+  grid-column: 3;
+  grid-row: var(--ss-row);
+}
+
+@media (max-width: 960px) {
+  /* One column: drop every explicit placement and let the DOM order
+   * (label, then divider/image/text per project) flow naturally. */
+  .success-stories__label-col,
+  .success-stories__divider,
+  .success-stories__image-figure,
+  .success-stories__text-block {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
 /* ---------- Col 1 — sticky label ---------- */
 
 .success-stories__label-col {
@@ -111,6 +149,15 @@
 .success-stories__image-figure {
   margin: 0;
 
+  /* Extra height the image carries beyond this frame, split evenly top and
+   * bottom. GSAP slides the image by ±8% of its OWN height — 8% of 124% is
+   * ~9.9% of the frame, comfortably inside the 12% of slack on each side, so
+   * no edge is ever revealed at either end of the scroll. Raising the shift
+   * in SuccessStories.tsx means raising this to match. */
+  --ss-image-overscan: 12%;
+
+  /* Containing block for the `fill` image below. */
+  position: relative;
   aspect-ratio: 4 / 3;
   border-radius: 4px;
   overflow: hidden;
@@ -121,27 +168,34 @@
     0 16px 40px color-mix(in oklch, var(--ink) 14%, transparent);
 }
 
-.success-stories__image {
+/* Parallax target. Sized taller than the figure and centred on it, giving
+ * the slide `--ss-image-overscan` of slack at each edge. Also the containing
+ * block for the `fill` image inside it. */
+.success-stories__image-frame {
+  position: absolute;
+  left: 0;
   width: 100%;
-  height: 100%;
+  top: calc(-1 * var(--ss-image-overscan));
+  height: calc(100% + 2 * var(--ss-image-overscan));
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  background:
-    linear-gradient(
-      135deg,
-      oklch(35% 0.04 70) 0%,
-      oklch(25% 0.04 50) 100%
-    );
+  /* Hint the compositor before the first scrub frame so the initial
+   * transform doesn't cause a one-frame promotion hitch. */
+  will-change: transform;
 }
 
-.success-stories__image-label {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
+.success-stories__image {
+  object-fit: cover;
+  object-position: center;
+}
+
+/* No scroll-driven motion — sit the image flush in its frame instead of
+ * leaving it parked at the -8% start position of a tween that never runs. */
+@media (prefers-reduced-motion: reduce) {
+  .success-stories__image-frame {
+    top: 0;
+    height: 100%;
+    will-change: auto;
+  }
 }
 
 /* ---------- Col 3 — text block ---------- */

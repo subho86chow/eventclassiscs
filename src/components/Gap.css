@@ -133,43 +133,21 @@
 }
 
 .gap__image {
+  position: relative;
   display: block;
   width: clamp(180px, 22vw, 320px);
   aspect-ratio: 3 / 4; /* portrait orientation matching a product photo */
   margin-block: clamp(1rem, 2vw, 1.5rem);
 
-  /* Soft drop shadow to lift the placeholder off the page. */
+  /* Soft drop shadow to lift the image off the page. */
   filter: drop-shadow(
     0 24px 48px color-mix(in oklch, var(--ink) 18%, transparent)
   );
 }
 
-.gap__image-inner {
-  width: 100%;
-  height: 100%;
-
-  /* Placeholder "photo" — a warm beige gradient with a label. Swap this
-   * out for <Image src="/products/something.jpg" ... /> when ready. */
-  background:
-    linear-gradient(
-      135deg,
-      oklch(78% 0.04 70) 0%,
-      oklch(60% 0.06 55) 60%,
-      oklch(45% 0.05 35) 100%
-    );
+.gap__image-img {
+  object-fit: cover;
   border-radius: 4px;
-
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-block-end: var(--space-md);
-}
-
-.gap__image-label {
-  font-family: var(--font-mono);
-  font-size: 0.625rem;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
 }
 
 @media (max-width: 768px) {

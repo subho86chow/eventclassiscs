@@ -10,19 +10,21 @@ import "./RotatingLogo.css";
  * Hallmark · top-right rotating logo (page chrome).
  *
  * Client component. Loads /logos/ec-logo.glb and overrides every mesh's
- * material with a "liquid glass" MeshPhysicalMaterial:
- *   transmission: 1.0       — see-through
- *   thickness / ior         — refractive volume (tuned between water & glass)
- *   iridescence: 0.4       — prismatic edge shimmer (subtle, not loud)
- *   envMapIntensity: 2.0    — strong Fresnel reflection
+ * material with a "liquid metal" chrome MeshPhysicalMaterial — the 3D
+ * analogue of the hero's white-on-white LiquidMetal shader:
+ *   metalness: 1.0           — fully metallic
+ *   roughness: 0.1          — near-mirror surface
+ *   clearcoat: 1.0          — wet liquid gloss
+ *   envMapIntensity: 3.5    — strong chrome reflections
  *
- * drei's <Environment preset="city" /> provides the IBL the glass needs.
+ * drei's <Environment preset="studio" /> provides the IBL the chrome needs —
+ * the bright studio boxes are what give the surface its white, liquid-metal
+ * sheen (matching the hero's white-on-white LiquidMetal shader) instead of
+ * the dark reflections a city/night map would smear across it.
  * Canvas is transparent (alpha: true) — the page bg shows behind the model.
  *
- * Perf: transmissionResolutionScale = 0.5 (set on onCreated) halves the
- * transmission render resolution. The transmission pass is the dominant
- * shader cost; halving it gives ~4× cheaper on that pass with almost no
- * visible quality loss on a smooth surface. DPR is capped at 1.
+ * Perf: no transmission pass (unlike the previous glass look), so the
+ * material is cheap; DPR stays capped at 1.
  *
  * Static 35° tilt on X + slow continuous Y rotation; pointer-events:none
  * on the wrapper so it never blocks hero clicks.
@@ -30,13 +32,13 @@ import "./RotatingLogo.css";
 
 const MODEL_URL = "/logos/ec-logo.glb";
 
-function GlassLogo() {
+function ChromeLogo() {
   const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
   const gltf = useGLTF(MODEL_URL);
 
-  // Clone + center + scale-to-fit + swap the imported material for a real
-  // glass. Done once per GLB load.
+  // Clone + center + scale-to-fit + swap the imported material for the
+  // liquid-metal chrome. Done once per GLB load.
   const scene = useMemo(() => {
     const cloned = gltf.scene.clone(true);
     const box = new THREE.Box3().setFromObject(cloned);
@@ -52,41 +54,35 @@ function GlassLogo() {
     const target = 1.5;
     cloned.scale.setScalar(target / maxDim);
 
-    // Override every mesh's material with the original "Monolog glass"
-    // look the user keeps asking for: see-through + Fresnel reflection +
-    // iridescent thin-film shimmer + chromatic dispersion at the edges.
+    // Override every mesh's material with a "liquid metal" chrome look
+    // (the 3D analogue of the hero's white-on-white LiquidMetal shader):
+    // fully metallic, near-mirror surface with a wet clearcoat gloss.
+    // The IBL does the heavy lifting — the city env map's sharp
+    // reflections are what sell the liquid chrome read.
     //
-    //   transmission: 1.0       — see-through
-    //   thickness: 0.4         — refractive volume
-    //   ior: 1.45              — liquid-glass sweet spot
-    //   roughness: 0.02        — very smooth
-    //   iridescence: 0.4       — rainbow shimmer on the surface
-    //   dispersion: 1.0        — RGB channels refract separately →
-    //                            prismatic fringing at edges (the
-    //                            signature look from Image #9)
-    //   envMapIntensity: 2.0   — strong Fresnel reflection off the IBL
+    //   metalness: 1.0         — fully metallic (no diffuse colour)
+    //   roughness: 0.1         — near-mirror, slightly softened
+    //   clearcoat: 1.0         — wet gloss layer on top of the metal
+    //   envMapIntensity: 3.5   — strong chrome reflections off the IBL
     //
-    // Dispersion is the most expensive feature — it adds an RGB-channel
-    // offset pass to the transmission render. We compensate by keeping
-    // transmissionResolutionScale = 0.5 (renderer-level) and dpr = [1, 1].
-    const glass = new THREE.MeshPhysicalMaterial({
+    // No transmission / dispersion / iridescence: those are the glass
+    // look (transmission) and a rainbow fringe (iridescence). Liquid
+    // chrome is monochrome, matching the hero's white-on-white shader.
+    // Dropping the transmission pass also removes the dominant shader
+    // cost — the renderer no longer needs transmissionResolutionScale.
+    const chrome = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
-      metalness: 0,
-      roughness: 0.02,
-      transmission: 1.0,
-      thickness: 0.4,
-      ior: 1.45,
-      iridescence: 0.4,
-      iridescenceIOR: 1.32,
-      iridescenceThicknessRange: [200, 200],
-      dispersion: 1.0,
-      envMapIntensity: 2.0,
+      metalness: 1.0,
+      roughness: 0.1,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.08,
+      envMapIntensity: 3.5,
       side: THREE.DoubleSide,
     });
 
     cloned.traverse((child) => {
       if (child instanceof THREE.Mesh) {
-        child.material = glass;
+        child.material = chrome;
       }
     });
 
@@ -125,19 +121,15 @@ export function RotatingLogo() {
           powerPreference: "high-performance",
         }}
         onCreated={({ gl }) => {
-          // transmissionResolutionScale = 0.5 renders the transmission
-          // pass at half-res and upscales. ~4× cheaper on the dominant
-          // pass for very little visible quality loss on a smooth surface.
-          gl.transmissionResolutionScale = 0.5;
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1;
+          gl.toneMappingExposure = 1.15;
         }}
       >
         <ambientLight intensity={0.3} />
         <directionalLight position={[3, 4, 3]} intensity={0.6} />
         <Suspense fallback={null}>
-          <Environment preset="city" background={false} />
-          <GlassLogo />
+          <Environment preset="studio" background={false} environmentIntensity={2} />
+          <ChromeLogo />
         </Suspense>
       </Canvas>
     </div>

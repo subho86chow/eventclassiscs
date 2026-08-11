@@ -67,9 +67,7 @@
  * the 100 × 200 stadium (was 22 px on the 120 × 500 stadium — scaled
  * with the perimeter to keep glyphs the same distance from the stroke). */
 .keep-scrolling__text {
-  /* NOTE: the site's --font-sans theme token is a circular var() and
-   * resolves to nothing, so reach for next/font's variable directly. */
-  font-family: var(--font-geist-sans), sans-serif;
+  font-family: var(--font-sans), sans-serif;
   font-weight: 500;
   font-size: 16px;
   letter-spacing: 0.04em;

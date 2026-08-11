@@ -1,4 +1,9 @@
-import { Fragment } from "react";
+"use client";
+
+import { Fragment, useEffect, useRef, type CSSProperties } from "react";
+import Image from "next/image";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Noise from "./Noise";
 import "./SuccessStories.css";
 
@@ -19,7 +24,13 @@ interface Project {
   description: string;
   stat: string;
   statCaption: string;
+  image: string;
 }
+
+/* Vertical travel of the image inside its frame, as a percentage of the
+ * image element's own height. The image is rendered taller than the frame
+ * (see PARALLAX_OVERSCAN in the CSS) so this slide never exposes an edge. */
+const PARALLAX_SHIFT = 8;
 
 const PROJECTS: ReadonlyArray<Project> = [
   {
@@ -29,6 +40,7 @@ const PROJECTS: ReadonlyArray<Project> = [
     stat: "21%",
     statCaption:
       "Increase in conversions with projects starting from $2M+",
+    image: "/services.png",
   },
   {
     title: "Lighthouse Studios",
@@ -37,6 +49,7 @@ const PROJECTS: ReadonlyArray<Project> = [
     stat: "3.4×",
     statCaption:
       "Increase in inbound enquiries during the film's festival run",
+    image: "/services.png",
   },
   {
     title: "Halcyon Events",
@@ -45,6 +58,7 @@ const PROJECTS: ReadonlyArray<Project> = [
     stat: "47%",
     statCaption:
       "Lift in direct booking conversions in the first quarter post-launch",
+    image: "/services.png",
   },
   {
     title: "Verdant Group",
@@ -53,6 +67,7 @@ const PROJECTS: ReadonlyArray<Project> = [
     stat: "1.8×",
     statCaption:
       "Increase in qualified investor meetings booked in the first 60 days",
+    image: "/services.png",
   },
 ];
 
@@ -62,9 +77,56 @@ function pad2(n: number): string {
 
 export function SuccessStories() {
   const total = PROJECTS.length;
+  const sectionRef = useRef<HTMLElement>(null);
+
+  /* Parallax — each image slides vertically inside its fixed frame, scrubbed
+   * 1:1 to that frame's travel through the viewport.
+   *
+   * Why GSAP ScrollTrigger and not CSS `animation-timeline: view()`: the CSS
+   * scroll-driven timeline is still Chromium-only (Safari and Firefox have no
+   * stable support as of 2026), and the section already runs GSAP +
+   * ScrollTrigger in KeepScrolling/HeroWordmark, so this adds no new bytes and
+   * keeps one scroll-driver authoritative for the whole page.
+   *
+   * `start: "top bottom"` / `end: "bottom top"` maps the full traversal —
+   * frame entering the bottom edge → leaving the top edge — onto the tween,
+   * so the drift reads continuously rather than snapping at a boundary. */
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    const ctx = gsap.context(() => {
+      section
+        .querySelectorAll<HTMLElement>("[data-ss-parallax]")
+        .forEach((imageEl) => {
+          gsap.fromTo(
+            imageEl,
+            { yPercent: -PARALLAX_SHIFT },
+            {
+              yPercent: PARALLAX_SHIFT,
+              ease: "none",
+              /* Own GPU layer — the per-frame transform writes then never
+               * trigger layout or paint on the surrounding grid. */
+              force3D: true,
+              scrollTrigger: {
+                trigger: imageEl.parentElement,
+                start: "top bottom",
+                end: "bottom top",
+                scrub: true,
+              },
+            },
+          );
+        });
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
 
   return (
-    <section className="success-stories" id="success-stories">
+    <section ref={sectionRef} className="success-stories" id="success-stories">
       {/* Subtle film-grain noise over the whole section. Pinned absolutely,
        * pointer-events:none so it never blocks clicks. The .noise-overlay
        * styles (100vw × 100vh) will overflow horizontally — clip it on the
@@ -82,12 +144,10 @@ export function SuccessStories() {
       <div className="success-stories__inner">
         {/* Col 1 — sticky label only. Spans every row in the section so
          * the label stays in view for the entire section's scroll height
-         * (project rows + divider rows). `1 / -1` spans from row 1 to the
-         * last auto-generated row. */}
-        <div
-          className="success-stories__label-col"
-          style={{ gridColumn: 1, gridRow: "1 / -1" }}
-        >
+         * (project rows + divider rows). Placement lives in CSS so the
+         * ≤960px breakpoint can unwind it — see the note on the row vars
+         * below. */}
+        <div className="success-stories__label-col">
           <span className="success-stories__dot" aria-hidden="true" />
           <span className="success-stories__label">Success Stories</span>
         </div>
@@ -95,33 +155,46 @@ export function SuccessStories() {
         {/* Col 2 + Col 3 — every project's image and text share a row,
          * separated from the previous project by a divider row that spans
          * only cols 2 + 3 (the label column stays clear). Project rows
-         * are odd (1, 3, 5, 7); divider rows are even (2, 4, 6). */}
+         * are odd (1, 3, 5, 7); divider rows are even (2, 4, 6).
+         *
+         * Only the row INDEX is passed inline (as a custom property); the
+         * column and row assignment itself is CSS. Inline grid placement
+         * would outrank the stacking media query, which is what previously
+         * dropped each figure into an implicit content-sized column and
+         * collapsed it to height 0 below 960px. */}
         {PROJECTS.map((project, i) => (
           <Fragment key={project.title}>
             {i > 0 && (
               <div
                 className="success-stories__divider"
                 aria-hidden="true"
-                style={{ gridColumn: "2 / 4", gridRow: i * 2 }}
+                style={{ "--ss-row": i * 2 } as CSSProperties}
               />
             )}
             <figure
               className="success-stories__image-figure"
-              style={{ gridColumn: 2, gridRow: i * 2 + 1 }}
+              style={{ "--ss-row": i * 2 + 1 } as CSSProperties}
             >
-              {/* Placeholder. Drop a real <Image src="..." fill sizes="..."
-               * className="success-stories__image" /> here once the asset
-               * is ready. */}
-              <div className="success-stories__image" aria-hidden="true">
-                <span className="success-stories__image-label">
-                  {project.title}
-                </span>
+              {/* The frame div — not the <Image> — is the parallax target.
+               * next/image `fill` injects inline `inset:0; height:100%`, which
+               * outranks any class selector, so the overscan has to live on a
+               * wrapper the image can fill instead. The wrapper is taller than
+               * the figure so it slides without revealing an edge. */}
+              <div className="success-stories__image-frame" data-ss-parallax="">
+                <Image
+                  src={project.image}
+                  alt={`${project.title} project imagery`}
+                  fill
+                  sizes="(max-width: 960px) 100vw, 50vw"
+                  className="success-stories__image"
+                  priority={i === 0}
+                />
               </div>
             </figure>
 
             <article
               className="success-stories__text-block"
-              style={{ gridColumn: 3, gridRow: i * 2 + 1 }}
+              style={{ "--ss-row": i * 2 + 1 } as CSSProperties}
             >
               <div
                 className="success-stories__pager"

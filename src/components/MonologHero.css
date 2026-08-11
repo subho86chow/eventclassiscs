@@ -60,8 +60,8 @@
  * (centre), actions live on the right.
  *
  * z-index 200 keeps the nav above section content but below the
- * wordmark (z-index 300 in .m-hero__wordmark-display) so the wordmark
- * reads as foreground text inside the header band.
+ * wordmark blend group (z-index 300 on .m-hero__wordmark-blend) so the
+ * wordmark reads as foreground text inside the header band.
  */
 .m-hero__nav {
   position: fixed;
@@ -81,10 +81,15 @@
   font-size: 0.9375rem;
   letter-spacing: -0.005em;
 
-  /* Global invert from globals.css applies (color: #ffffff,
-   * mix-blend-mode: difference). The nav floats at the top of the
-   * viewport, so it sits over whichever section is currently scrolled
-   * into view — invert keeps it legible across the whole page. */
+  /* Per-pixel invert, container-level: the nav itself is the blend
+   * group. It's fixed + static (never transformed), so the compositor
+   * samples the correct page backdrop behind the band on every frame
+   * and the whole header (links, toggle, CTA) inverts as one unit —
+   * dark ink on light sections, white on dark sections. Children are
+   * plain white with `mix-blend-mode: normal` (see the per-child
+   * overrides below) so nothing double-blends inside the group. */
+  color: #ffffff;
+  mix-blend-mode: difference;
 
   /* Fully transparent — no background, no blur, no border. Content
    * scrolls beneath cleanly. */
@@ -110,11 +115,12 @@
 }
 
 .m-hero__links a {
-  /* No `color: inherit` here — see the .m-hero__para comment for the
-   * full reasoning. The page-wide `mix-blend-mode: difference` in
-   * globals.css needs the link text to be pure white for the blend
-   * to produce ink against whatever section is behind the fixed
-   * nav. */
+  /* Container-level invert lives on .m-hero__nav (see above) — the
+   * children are plain white with normal blending so the band inverts
+   * as one group instead of per-glyph. Explicit color: #fff keeps this
+   * independent of the :where() invert rule from globals.css. */
+  color: #ffffff;
+  mix-blend-mode: normal;
   text-decoration: none;
   font-weight: 400;
   font-size: 0.9375rem;
@@ -133,6 +139,10 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-md);
+  /* The CTA no longer lives in this row — reserve its 43 px so the
+   * nav band keeps its height and the links stay vertically centred
+   * on the pill's centre. */
+  min-height: 43px;
 }
 
 /* Sound-toggle — icon-only button, no chrome. Sits inline with the
@@ -145,16 +155,22 @@
   height: 1.75rem;
 
   background: transparent;
-  /* No `color: inherit` — see the .m-hero__para comment. The
-   * page-wide invert needs the button's `color: #fff` from the
-   * :where() rule to flow through to the SVG stroke via
-   * `currentColor`. */
+  /* Inherit the shader-aware colour from .m-hero__nav (pure white —
+   * the container group inverts it). */
+  color: inherit;
+  mix-blend-mode: normal;
   border: none;
   border-radius: 2px;
 
   cursor: pointer;
 
   transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+/* The icon's SVG is in globals.css's :where() invert list — neutralise
+ * it so it stays plain white inside the nav's container-level group. */
+.m-hero__toggle svg {
+  mix-blend-mode: normal;
 }
 
 .m-hero__toggle:hover {
@@ -166,33 +182,75 @@
   outline-offset: 2px;
 }
 
-/* Primary CTA — text + arrow, no button chrome. Reads as a link so it
- * doesn't visually outweigh the slim transparent header. */
+/* Primary CTA — filled pill, fixed to the nav band, rendered OUTSIDE
+ * the nav's difference blend group (see MonologHero.tsx) so it always
+ * shows its true colours on any backdrop.
+ *
+ * Rest: white pill + ink ring + black text (outlined — visible against
+ * the light shader hero). Hover: flips to a solid black pill with
+ * white text + arrow, and the arrow slides up-right along its
+ * diagonal.
+ *
+ * Offsets mirror the nav band: top = nav's padding-block (0.5rem),
+ * right = nav's padding-inline (2vw), z-index matches the nav (200). */
 .m-hero__cta {
+  position: fixed;
+  top: 0.5rem;
+  right: 2vw;
+  z-index: 200;
+
   display: inline-flex;
   align-items: center;
-  gap: 0.4em;
+  gap: 0.6em;
 
   font-weight: 500;
   font-size: 0.9375rem;
   letter-spacing: -0.005em;
 
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  /* No `color: inherit` — see the .m-hero__para comment. The
-   * page-wide invert needs the CTA's `color: #fff` from the
-   * :where() rule to flow through to the SVG stroke via
-   * `currentColor`. */
+  /* 1px border at rest (the ink ring) — subtract it from the padding so
+   * the pill's footprint stays identical to the pre-ring size. */
+  padding: calc(0.625rem - 1px) calc(1.4rem - 1px);
+  border: 1px solid var(--color-foreground);
+  border-radius: 999px;
+
+  background: var(--color-paper);
+  color: var(--color-foreground);
+
+  mix-blend-mode: normal;
   text-decoration: none;
   white-space: nowrap;
 
-  transition: opacity var(--dur-fast) var(--ease-out);
+  transition:
+    background-color var(--dur-normal) var(--ease-out),
+    color var(--dur-normal) var(--ease-out);
+}
+
+/* The label span and arrow svg are in globals.css's :where() invert
+ * list, which sets color: #fff directly on them (specificity 0, beats
+ * nothing) — so we must re-tie them to the pill's own color, otherwise
+ * the hover flip never reaches the text/arrow. */
+.m-hero__cta span,
+.m-hero__cta svg {
+  color: currentColor;
+  mix-blend-mode: normal;
 }
 
 .m-hero__cta:hover {
-  opacity: 0.6;
+  background: var(--color-foreground);
+  color: var(--color-paper);
+}
+
+.m-hero__cta:active {
+  background: var(--color-ink-dim);
+}
+
+/* Arrow slides up-right along its diagonal on hover. */
+.m-hero__cta svg {
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.m-hero__cta:hover svg {
+  transform: translate(3px, -3px);
 }
 
 .m-hero__cta:focus-visible {
@@ -208,11 +266,16 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: var(--space-md);
+  gap: var(--space-2xs);
 
   max-width: 32rem;
   width: 100%;
   margin: 0 auto;
+
+  /* Push the paragraphs down off dead-centre — the flex centring keeps
+   * them centred inside the padded content box, so this shifts the
+   * whole group down by half the padding. */
+  padding-top: clamp(8rem, 17vh, 17rem);
 
   /* Global invert from globals.css applies (color: #ffffff,
    * mix-blend-mode: difference). Children (mic icon, two paragraphs)
@@ -236,10 +299,10 @@
 
 .m-hero__para {
   font-family: var(--font-sans);
-  font-weight: 400;
-  font-size: 0.9375rem;
-  line-height: 1.55;
-  letter-spacing: -0.003em;
+  font-weight: 700;
+  font-size: clamp(1.125rem, 2.4vw, 1.75rem);
+  line-height: 1.4;
+  letter-spacing: -0.02em;
   /* No `color: inherit` here on purpose. The page-wide
    * `mix-blend-mode: difference` in globals.css needs the text to be
    * pure white (#fff) for the blend to produce dark ink on the
@@ -250,10 +313,6 @@
    * the paragraph invisible on the liquid-metal hero. */
   margin: 0;
   max-width: 36ch;
-}
-
-.m-hero__para + .m-hero__para {
-  margin-top: var(--space-xs);
 }
 
 /* ---------- Massive bottom wordmark ---------- */
@@ -279,6 +338,36 @@
    */
   height: clamp(2.5rem, 15.4vw, 30rem);
   line-height: 0.78;
+}
+
+/* Fixed full-viewport blend group for the wordmark. Carries the
+ * per-pixel `difference` invert (white group → inverts against
+ * whatever section is behind it) while the GSAP-transformed wordmark
+ * inside stays `mix-blend-mode: normal`.
+ *
+ * Why the wrapper exists: blend + transform on the SAME element is
+ * the known-broken case — the compositor ties the blend group to the
+ * untransformed border box, so the transformed glyphs get clipped to
+ * that box and the backdrop is sampled at the wrong position (the
+ * "cropped during the header transition" bug we hit before). Putting
+ * the blend on a static, full-viewport, never-transformed group and
+ * animating only an inner child means the group always covers the
+ * wordmark's whole travel envelope (bottom-centre at scale 1 →
+ * top-left at scale 0.05) and the backdrop is sampled correctly on
+ * every frame.
+ *
+ * z-index 300 keeps the wordmark above section content AND the fixed
+ * nav (z-index 200), matching the previous layering. The group is
+ * transparent except the glyphs and never receives pointer events. */
+.m-hero__wordmark-blend {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+
+  color: #ffffff;
+  mix-blend-mode: difference;
+
+  pointer-events: none;
 }
 
 .m-hero__wordmark-display {
@@ -374,37 +463,28 @@
   );
 
   display: inline-block;
-  font-family: var(--font-sans);
+  /* Bricolage Grotesque variable at 800 — the "eventclassics" wordmark
+   * face (hero + sticky header share this element). font-optical-sizing
+   * auto drives the opsz axis from font-size: the display cut at the
+   * giant hero size, the text cut at the shrunk header size. */
+  font-family: var(--font-bricolage), var(--font-archivo), sans-serif;
+  font-optical-sizing: auto;
   font-weight: 800;
   font-style: normal;
-  /* 90 vw ÷ 5.85em ≈ 15.4 vw → wordmark fills the 90 vw content area
-   * (hero padding-inline: 5 vw). At 375 → 1920 px this gives:
-   *   57.75 / 118.27 / 197.12 / 295.68 px font, with 5 vw gap on each
-   * side. Max cap at 30 rem (480 px) prevents the type from getting
-   * absurd on ultrawide viewports.
+  /* 90 vw ÷ 5.455em ≈ 16.5 vw → wordmark fills the 90 vw content area
+   * (hero padding-inline: 5 vw). "eventclassics" at Bricolage Grotesque
+   * 800 with -0.05em letter-spacing measures ~5.455em (measured at the
+   * display cut, opsz auto). Max cap at 30 rem (480 px) prevents the
+   * type from getting absurd on ultrawide viewports.
    *
    * The size shrink on scroll is done via `transform: scale()` in
    * HeroWordmark, NOT by animating font-size — that would reflow every
    * frame and tank the frame rate.
    */
-  font-size: clamp(4rem, 18vw, 30rem);
+  font-size: clamp(4rem, 16.5vw, 30rem);
   letter-spacing: -0.05em;
   text-transform: none;
   white-space: nowrap;
-  /* Override the page-wide :where() invert from globals.css. The
-   * wordmark crosses section boundaries during its scroll-driven
-   * transform, and the mix-blend-mode difference blend can render
-   * as a clipped / split-colour seam at those boundaries (the
-   * compositor blends per-pixel against whatever backdrop is under
-   * the glyphs at each frame — when a single glyph straddles a
-   * section edge, its top half inverts against the light section
-   * and its bottom half against the dark one, which reads as a
-   * horizontal cut). Solid ink avoids the seam entirely. If a future
-   * iteration wants the invert back, isolate the element with
-   * `isolation: isolate` to keep the blend scoped to a single layer. */
-  color: var(--ink);
-  mix-blend-mode: normal;
-
   /* Promote to its own layer so the scroll-driven transform stays on
    * the GPU thread; this is the single biggest lever for 60fps.
    *
@@ -416,11 +496,16 @@
    * `will-change` hint is redundant overhead that lives on after the
    * animation is done. */
 
-  /* Stay above every section's content AND the fixed nav (z-index 200)
-   * as it travels from the hero to the persistent top-left header
-   * position. The wordmark reads as the foreground logo inside the
-   * sticky header band. */
-  z-index: 300;
+  /* The per-pixel invert lives on the .m-hero__wordmark-blend wrapper
+   * (see above) — the wordmark itself is plain white with normal
+   * blending so its scroll-driven transform never interacts with a
+   * blend group (blend + transform on the same element clips the
+   * glyphs / samples the wrong backdrop — the crop that solid ink
+   * used to avoid). Inside the static full-viewport blend group, the
+   * transform is safe: the group inverts the glyphs against the page
+   * backdrop on every frame while GSAP moves this child freely. */
+  color: #ffffff;
+  mix-blend-mode: normal;
 }
 
 /* ---------- Desktop / tablet ---------- */
@@ -459,14 +544,74 @@
   .m-hero__links {
     display: none;
   }
-}
 
-@media (max-width: 380px) {
-  /* Drop the article so the CTA fits single-line on the smallest phones. */
-  .m-hero__cta > span {
-    display: none;
+  /* ----- Mobile pitch: park the paragraph 15vh above the wordmark -----
+   *
+   * Anchored from the BOTTOM rather than pushed down with padding-top, so
+   * the 15vh is measured to the paragraph's last line no matter how many
+   * lines it wraps to. A top-anchored version drifts by a whole line
+   * between a 360px and a 430px phone.
+   *
+   * --wordmark-stack reproduces the space the fixed wordmark occupies off
+   * the viewport bottom: its own line box (font-size × the 0.6
+   * line-height) plus the 5vw gap beneath it. Both terms are duplicated
+   * from .m-hero__wordmark-display — if either changes there, change it
+   * here too. Declared on :root because the CTA below needs it as well and
+   * is not a descendant of the pitch.
+   *
+   * The `100dvh - 100vh` term reconciles two coordinate spaces: the pitch
+   * is positioned inside .m-hero (sized in dvh) while the wordmark is fixed
+   * and positioned in vh. On a phone with visible browser chrome those
+   * differ, and without the correction the gap drifts by exactly that
+   * delta. Where the two are equal the term is zero. */
+  :root {
+    --wordmark-stack: calc(0.6 * clamp(4rem, 16.5vw, 30rem) + 5vw);
+  }
+
+  .m-hero__pitch {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(100dvh - 100vh + var(--wordmark-stack) + 15vh);
+
+    /* Replaced by the bottom anchor above. */
+    padding-top: 0;
+    margin-inline: auto;
+  }
+
+  /* CTA sits 2vh below the paragraph's last line.
+   *
+   * It stays a body-level sibling (see MonologHero.tsx) rather than moving
+   * inside the pitch, because nesting it under .m-hero would trap its
+   * z-index: 200 inside that section's z-index: 10 stacking context — the
+   * nav and pinned section visuals would then paint over the pill and
+   * swallow its clicks. So instead of `top: calc(100% + 2vh)` relative to
+   * the pitch, the offset is recomputed against the viewport.
+   *
+   * The pitch's bottom edge sits at `100vh - stack - 15vh` from the top of
+   * the hero, and the hero starts at the document origin, so adding the 2vh
+   * gives `100vh - stack - 13vh`. This holds regardless of how the
+   * paragraph wraps, because the pitch is bottom-anchored above.
+   *
+   * `absolute`, not `fixed`: the pill has to scroll away with the hero. A
+   * fixed pill would hang in the middle of the viewport over every section
+   * below. */
+  .m-hero__cta {
+    position: absolute;
+    top: calc(100vh - var(--wordmark-stack) - 13vh);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
   }
 }
+
+/* NOTE: a `@media (max-width: 380px)` rule used to hide `.m-hero__cta > span`
+ * so the pill could fit single-line beside the nav on the narrowest phones.
+ * It is gone because ≤380px is a subset of the ≤768px block above, where the
+ * CTA is now centred below the paragraph with the full content width to
+ * itself — the label always fits. Keeping it would also have left the link
+ * with no accessible name on those widths: the arrow <svg> is aria-hidden, so
+ * hiding the span stripped the only text the element had. */
 
 /* ---------- Reduced motion ---------- */
 

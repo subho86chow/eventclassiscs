@@ -6,8 +6,17 @@
  *                                          below every non-negative layer
  *   .m-hero__pitch         (static)     ← level 3 → above the shader
  *   .m-hero__wordmark-bar  (relative)   ← level 6 → above the shader
- *   .m-hero__nav           z-index: 200 ← fixed nav above the shader
- *   .m-hero__wordmark      z-index: 300 ← bottom wordmark above the shader
+ *   .m-hero__nav           z-index: 200 ← fixed nav — ROOT context
+ *   .m-hero__wordmark-blend z-index: 300 ← blend group — ROOT context
+ *
+ * Why the nav + wordmark blend group live OUTSIDE the section (see
+ * MonologHero.tsx): both carry container-level mix-blend-mode groups,
+ * and a blend group only blends with content behind it inside the SAME
+ * stacking context. Inside .m-hero (z-index: 10) their backdrop would
+ * be the hero's interior alone — they'd render raw white over every
+ * section past the hero. As body children they participate in the
+ * root stacking context and invert against whichever section is
+ * actually behind them.
  *
  * Why z-index: -1 inside a stacking context: the section declares
  * `z-index: 10` which makes it the root of a new stacking context.

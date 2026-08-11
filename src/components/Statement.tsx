@@ -43,7 +43,7 @@ export function Statement({
   stat = "15+",
   statCaption = "Founder-led brands from disruptive creative agencies to consumer brands",
   paragraphs = [
-    "Great founders changing the world deserve a presence as powerful as what they're building. Most founders we work with have built something significant, but their website doesn't show it yet.",
+    "Great founders changing the world deserve a presence as powerful as what they're building. Most founders we work with have built something significant, but their brand doesn't shows it yet.",
     "That gap costs more than revenue. It costs the certainty that your brand is finally being understood.",
   ],
   bylineName = "Huy (By Huy) Nguyen",

@@ -22,7 +22,7 @@
   grid-template-areas:
     "pager  pager"
     "left   right"
-    "byline byline";
+    ".      byline";
   row-gap: clamp(2rem, 5vw, 4rem);
   column-gap: clamp(2rem, 5vw, 5rem);
 }
@@ -151,14 +151,20 @@
   }
 }
 
-/* ---------- Byline (bottom-right) ---------- */
+/* ---------- Byline (under the statement copy, left-aligned) ---------- */
 
 .statement__byline {
   grid-area: byline;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: var(--space-sm);
+
+  /* The byline is made of <div>s, which the globals :where() invert rule
+   * (h1–h6, p, span, …) doesn't reach — so it would inherit dark ink on
+   * this dark section. Explicit white keeps the name, role and the
+   * avatar initial legible. */
+  color: var(--paper);
 
   padding-top: clamp(2rem, 5vw, 4rem);
 }

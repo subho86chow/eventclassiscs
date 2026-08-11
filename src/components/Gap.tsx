@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef } from "react";
+import Image from "next/image";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./Gap.css";
@@ -234,9 +235,13 @@ export function Gap({ copy = DEFAULT_COPY }: GapProps) {
          * end of the section. */}
         <div className="gap__below">
           <div className="gap__image" aria-hidden="true">
-            <div className="gap__image-inner">
-              <span className="gap__image-label">PRODUCT IMAGE</span>
-            </div>
+            <Image
+              src="/gap.png"
+              alt=""
+              fill
+              sizes="(max-width: 768px) 60vw, 22vw"
+              className="gap__image-img"
+            />
           </div>
 
           <p className="gap__copy">{copy}</p>

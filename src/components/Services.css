@@ -261,14 +261,59 @@
 .services__item {
   font-family: var(--font-display, var(--font-sans));
   font-weight: 600;
-  font-size: clamp(2.5rem, 5.5vw, 5rem);
-  line-height: 1.05;
+  /* Sized so the longest entry ("Website Strategy") stays on ONE line at
+   * every desktop width. Col 2 is 9fr of a 20fr grid with wide gaps, so it
+   * measures only ~450–505px even at 1920, which is what sets the ceiling:
+   * 52px at 1280, 56px at 1440 and above.
+   *
+   * The vw term is what keeps 1280 in bounds; the 3.5rem cap is what keeps
+   * 1440+ in. Verified one-line at 1280 / 1440 / 1680 / 1920.
+   *
+   * NOTE: this ceiling is a function of the longest name in SERVICES. It was
+   * 44px while "Website Development" was in the list; removing that entry is
+   * what bought the extra 12px. Adding a longer name back will force it down
+   * again — re-measure rather than letting entries silently wrap. */
+  font-size: clamp(1.5rem, 3.85vw, 3.5rem);
+  line-height: 1.1;
   letter-spacing: -0.03em;
   cursor: pointer;
   transform: translateX(0);
+
+  /* Full opacity is the DEFAULT, not the dimmed state — see the hover-gate
+   * below. Anything that can't hover (touch, stylus) never gets a chance to
+   * undim, so the dim must not apply there or the list is permanently faint. */
+  opacity: 1;
   transition:
+    opacity 220ms var(--ease-out),
     color 220ms var(--ease-out),
     transform 320ms var(--ease-out);
+}
+
+/* Dim-until-hover, echoing the Statement section's dimmed-letter treatment.
+ *
+ * Gated on `(hover: hover)` so only real pointer devices see the dim. On a
+ * phone there is no hover, so the media query never matches and every item
+ * stays at opacity 1.
+ *
+ * The dim is 0.4 rather than Statement's 0.1 because the two states are not
+ * equivalent: Statement's letters are scroll-revealed to full opacity for
+ * every visitor, so 0.1 is a transient frame. Here the dim is the resting
+ * state and can persist indefinitely, so it has to stay readable on its own.
+ * Tune via --services-item-dim. */
+@media (hover: hover) {
+  .services__list {
+    --services-item-dim: 0.4;
+  }
+
+  .services__item {
+    opacity: var(--services-item-dim);
+  }
+
+  .services__item:hover,
+  .services__item--active,
+  .services__item:focus-visible {
+    opacity: 1;
+  }
 }
 
 .services__item:hover,

@@ -78,7 +78,6 @@ const SERVICES: ReadonlyArray<Service> = [
   { name: "Visual Identity",      imageFrom: "oklch(35% 0.04 90)",  imageTo: "oklch(15% 0.04 70)",  imageLabel: "VISUAL IDENTITY" },
   { name: "Website Strategy",     imageFrom: "oklch(35% 0.04 200)", imageTo: "oklch(15% 0.04 180)", imageLabel: "WEBSITE STRATEGY" },
   { name: "Website Design",       imageFrom: "oklch(35% 0.04 260)", imageTo: "oklch(15% 0.04 240)", imageLabel: "WEBSITE DESIGN" },
-  { name: "Website Development",  imageFrom: "oklch(35% 0.04 320)", imageTo: "oklch(15% 0.04 300)", imageLabel: "WEBSITE DEVELOPMENT" },
   { name: "3D Development",       imageFrom: "oklch(35% 0.04 60)",  imageTo: "oklch(15% 0.04 40)",  imageLabel: "3D DEVELOPMENT" },
 ];
 

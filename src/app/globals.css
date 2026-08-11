@@ -13,8 +13,8 @@
   --color-ink: var(--ink);
   --color-ink-dim: var(--ink-dim);
 
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-archivo);
+  --font-mono: var(--font-source-sans-3);
   --font-heading: var(--font-sans);
   --font-display: var(--font-sans);
 
