@@ -20,22 +20,24 @@
 }
 
 /* Noise container — full section coverage, pointer-events disabled so the
- * grain never intercepts clicks meant for the project layout below. */
+ * grain never intercepts clicks meant for the project layout below.
+ *
+ * Intentionally NO z-index. The section's paint order is: noise (declared
+ * first in the DOM) → inner (declared after). Both have z-index: auto,
+ * so no stacking context exists between the text and the section bg —
+ * `mix-blend-mode: difference` on the text reaches all the way back to
+ * the section's `background: var(--paper)` and produces correct dark ink.
+ * If a z-index is added here, it creates a stacking context and traps
+ * the blend (verified at runtime — the text goes invisible white-on-white). */
 .success-stories__noise {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 1;
   mix-blend-mode: multiply;
   opacity: 0.6;
 }
 
 .success-stories__inner {
-  /* Lift above the noise layer so the grid + text stay readable on top of
-   * the grain. */
-  position: relative;
-  z-index: 2;
-
   max-width: 90rem;
   margin-inline: auto;
   padding-inline: clamp(var(--space-md), 5vw, var(--space-2xl));

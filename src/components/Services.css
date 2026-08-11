@@ -132,6 +132,19 @@
   font-size: clamp(1rem, 1.4vw, 1.25rem);
   line-height: 1.5;
   letter-spacing: -0.005em;
+
+  /* .services__quote carries a transform: translateY() at rest and at
+   * active (the cross-fade between testimonials), which creates a
+   * stacking context and traps the page-wide `mix-blend-mode:
+   * difference` from globals.css — the blend would only see the
+   * quote's transparent interior and produce white-on-white
+   * invisible text. Bypass the trap with explicit ink (the same
+   * escape hatch the MonologHero wordmark uses, MonologHero.css:380-
+   * 392). If the carousel is ever refactored to remove the
+   * transform, this override can come off and the global blend will
+   * do the right thing again. */
+  color: var(--ink);
+  mix-blend-mode: normal;
   max-width: 36ch;
 }
 

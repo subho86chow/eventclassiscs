@@ -161,7 +161,20 @@
    * :where() keeps specificity at 0 so any explicit colour on a
    * section / component overrides this freely. SVG fill / stroke,
    * borders, backgrounds, and shadows are deliberately NOT in this
-   * list — they should not blend. */
+   * list — they should not blend.
+   *
+   * The one trap: mix-blend-mode only blends with the backdrop
+   * INSIDE the same stacking context. Any ancestor that creates a
+   * stacking context between this text and the section bg
+   * (z-index, transform, opacity < 1, filter, isolation, another
+   * blend mode) cuts the backdrop down to that ancestor's
+   * transparent interior, so the text blends with nothing and
+   * renders pure white regardless of bg — invisible on white.
+   * The fix is always at the ancestor (drop the z-index, drop the
+   * transform, move the blend to the container level like FAQ /
+   * the hero nav, or override this rule with explicit ink +
+   * mix-blend-mode: normal on the trapped node — the MonologHero
+   * wordmark is the canonical example of that last escape hatch). */
   :where(
     h1, h2, h3, h4, h5, h6,
     p, a, span, button, li, dt, dd,
