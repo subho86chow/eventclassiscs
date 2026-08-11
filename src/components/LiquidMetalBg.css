@@ -36,17 +36,24 @@
    * target. */
   pointer-events: none;
 
-  /* GPU-composited so any subsequent scroll/repaint on the hero
-   * doesn't trigger a re-rasterisation of the WebGL framebuffer.
+  /* `contain: layout` (NOT `contain: layout paint`) on purpose. The
+   * `paint` value creates a new stacking context per the spec, which
+   * traps the page-wide `mix-blend-mode: difference` from globals.css
+   * — the text in `.m-hero` would then blend with the canvas
+   * wrapper's transparent interior and render white-on-white
+   * invisible. Keeping only `contain: layout` preserves the
+   * layout-isolation optimisation hint the browser uses to skip
+   * re-layouting the canvas when the rest of the page reflows,
+   * without carving out a stacking context that blocks the blend.
    *
    * Intentionally NO `will-change: transform` — HeroWordmark.tsx's own
    * comments document why: a permanent will-change hint "can force
    * excessive layer creation and eat up memory/GPU bandwidth." The
    * WebGL canvas is already a heavy GPU consumer; adding another
-   * permanently-promoted layer tip the compositor budget past the
+   * permanently-promoted layer tips the compositor budget past the
    * point where the wordmark's scroll-driven transform stays smooth.
    */
-  contain: layout paint;
+  contain: layout;
 }
 
 .liquid-metal-bg > * {

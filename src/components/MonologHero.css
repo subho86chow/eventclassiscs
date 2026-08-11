@@ -110,10 +110,11 @@
 }
 
 .m-hero__links a {
-  /* Inherit the shader-aware colour from .m-hero__nav (which holds
-   * --text-color-nav). Falling back to explicit ink would defeat
-   * the inversion. */
-  color: inherit;
+  /* No `color: inherit` here — see the .m-hero__para comment for the
+   * full reasoning. The page-wide `mix-blend-mode: difference` in
+   * globals.css needs the link text to be pure white for the blend
+   * to produce ink against whatever section is behind the fixed
+   * nav. */
   text-decoration: none;
   font-weight: 400;
   font-size: 0.9375rem;
@@ -144,8 +145,10 @@
   height: 1.75rem;
 
   background: transparent;
-  /* Inherit the shader-aware colour from .m-hero__nav. */
-  color: inherit;
+  /* No `color: inherit` — see the .m-hero__para comment. The
+   * page-wide invert needs the button's `color: #fff` from the
+   * :where() rule to flow through to the SVG stroke via
+   * `currentColor`. */
   border: none;
   border-radius: 2px;
 
@@ -178,8 +181,10 @@
   border: none;
   border-radius: 0;
   background: transparent;
-  /* Inherit the shader-aware colour from .m-hero__nav. */
-  color: inherit;
+  /* No `color: inherit` — see the .m-hero__para comment. The
+   * page-wide invert needs the CTA's `color: #fff` from the
+   * :where() rule to flow through to the SVG stroke via
+   * `currentColor`. */
   text-decoration: none;
   white-space: nowrap;
 
@@ -221,8 +226,11 @@
 .m-hero__icon {
   width: 3rem;
   height: 3rem;
-  /* Inherit the shader-aware colour from .m-hero__pitch. */
-  color: inherit;
+  /* No `color: inherit` here on purpose — see the .m-hero__para
+   * comment above. The SVG paths use `stroke="currentColor"`, so
+   * letting the :where() rule's color: #fff apply makes the stroke
+   * white, and the page-wide `mix-blend-mode: difference` (now
+   * covering `svg` in globals.css) runs against the canvas. */
   margin-bottom: var(--space-xs);
 }
 
@@ -232,8 +240,14 @@
   font-size: 0.9375rem;
   line-height: 1.55;
   letter-spacing: -0.003em;
-  /* Inherit the shader-aware colour from .m-hero__pitch. */
-  color: inherit;
+  /* No `color: inherit` here on purpose. The page-wide
+   * `mix-blend-mode: difference` in globals.css needs the text to be
+   * pure white (#fff) for the blend to produce dark ink on the
+   * near-white canvas. A `color: inherit` declaration (specificity
+   * 0,1,0) would beat the :where() rule (specificity 0) and pull
+   * in `var(--ink)` from the body — which, blended with difference
+   * against a near-white backdrop, produces near-white and renders
+   * the paragraph invisible on the liquid-metal hero. */
   margin: 0;
   max-width: 36ch;
 }

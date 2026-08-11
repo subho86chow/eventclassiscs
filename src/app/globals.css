@@ -179,7 +179,8 @@
     h1, h2, h3, h4, h5, h6,
     p, a, span, button, li, dt, dd,
     label, time, small, strong, em, code,
-    figcaption, blockquote
+    figcaption, blockquote,
+    svg
   ) {
     color: #ffffff;
     mix-blend-mode: difference;
