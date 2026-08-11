@@ -115,85 +115,148 @@ export function KeepScrolling() {
 
     gsap.registerPlugin(ScrollTrigger);
 
+    /* Pause the SMIL text march while the section is off-screen. The 22 s
+     * startOffset animation runs on the document timeline continuously —
+     * main-thread SVG animation on mobile Safari — even when the pinned
+     * stage is far from the viewport. The march resumes the moment the
+     * section approaches. */
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) svg.unpauseAnimations();
+        else svg.pauseAnimations();
+      },
+      { rootMargin: "150px 0px" },
+    );
+    io.observe(section);
+
+    /* Resolve every animated element ONCE up front — direct node refs
+     * sidestep selector-scoping entirely and are faster than string
+     * lookups on every tween build. */
+    const grid = section.querySelector("[data-ks-grid]");
+    const fill = section.querySelector("[data-ks-fill]");
+    const stroke = section.querySelector("[data-ks-stroke]");
+    const text = section.querySelector("[data-ks-text]");
+    const zoom = section.querySelector("[data-ks-zoom]");
+    const whiteout = section.querySelector("[data-ks-whiteout]");
+
+    let mm: gsap.MatchMedia | null = null;
+
     const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        defaults: { ease: "none", force3D: true },
-        scrollTrigger: {
-          trigger: section,
-          start: "top top",
-          end: "+=300%",
-          pin: true,
-          /* The root <body> is `flex flex-col`, and ScrollTrigger
-           * auto-disables pin spacing under a flex parent — which would
-           * leave zero scroll room for the scrub. Force it back on. */
-          pinSpacing: true,
-          /* Direct 1:1 mapping of scroll → timeline progress. `scrub: 0.75`
-           * was a 750 ms catch-up window — exactly the perceived lag the
-           * user felt in the wordmark animation. Same fix here. */
-          scrub: true,
-          /* Pre-pin the layout by 1 px on fast scroll so the pin doesn't
-           * visibly snap on trackpad flicks. */
-          anticipatePin: 1,
-        },
-      });
+      mm = gsap.matchMedia(section);
 
-      tl
-        /* Phase 1 — flood: grid recedes, stadium fills white, ink turns
-         * grey. (GSAP's colour parser wants hex/rgb, not oklch.) Faster
-         * than before so the stadium lands white quickly and the user gets
-         * a beat to read the marching text before the magnify. */
-        .to("[data-ks-grid]", { opacity: 0, duration: 0.18, force3D: true }, 0.05)
-        .to("[data-ks-fill]", { fillOpacity: 1, duration: 0.15, force3D: true }, 0.07)
-        .to("[data-ks-stroke]", { opacity: 0, duration: 0.12, force3D: true }, 0.09)
-        .to("[data-ks-text]", { fill: "#8a8a8a", duration: 0.15, force3D: true }, 0.07)
-        /* Phase 2 — zoom from the stadium centre; the perimeter text
-         * becomes the giant left/right columns. */
-        .to(
-          "[data-ks-zoom]",
-          {
-            scale: ZOOM_FINAL,
-            svgOrigin: `${STADIUM_CX} ${STADIUM_CY}`,
-            duration: 0.4,
-            ease: "power2.inOut",
-            force3D: true,
+      const buildStage = ({
+        pinEnd,
+        zoomStart,
+        whiteoutStart,
+        whiteoutDuration,
+        driftEnd,
+      }: {
+        pinEnd: string;
+        zoomStart: number;
+        whiteoutStart: number;
+        whiteoutDuration: number;
+        driftEnd: string;
+      }) => {
+        const tl = gsap.timeline({
+          defaults: { ease: "none", force3D: true },
+          scrollTrigger: {
+            trigger: section,
+            start: "top top",
+            end: pinEnd,
+            pin: true,
+            /* The root <body> is `flex flex-col`, and ScrollTrigger
+             * auto-disables pin spacing under a flex parent — which would
+             * leave zero scroll room for the scrub. Force it back on. */
+            pinSpacing: true,
+            /* Direct 1:1 mapping of scroll → timeline progress. `scrub: 0.75`
+             * was a 750 ms catch-up window — exactly the perceived lag the
+             * user felt in the wordmark animation. Same fix here. */
+            scrub: true,
+            /* Pre-pin the layout by 1 px on fast scroll so the pin doesn't
+             * visibly snap on trackpad flicks. */
+            anticipatePin: 1,
           },
-          0.32,
-        )
-        /* Phase 3 — whiteout veil matches the next section's bg colour
-         * (Success Stories = oklch(99% 0.005 240)), so when the pin
-         * releases the section exits on pure white and the transition is
-         * seamless. Starts just before the zoom completes so the stadium
-         * and the surrounding grid merge into one continuous white. */
-        .to("[data-ks-whiteout]", { opacity: 1, duration: 0.2, force3D: true }, 0.8);
+        });
 
-      /* Column drift — its own trigger so it also runs while the section
-       * scrolls into view, not just while pinned. "top bottom" → pin end
-       * is exactly 4 viewport heights (1 approach + 3 pinned).
-       *
-       * Each column is its own scrollTrigger — that's 9 parallel
-       * triggers reading scroll progress every frame. With `scrub: true`
-       * each one is just a direct 1:1 map (no smoothing window to
-       * recompute), and `force3D: true` puts every column on its own
-       * GPU layer so the translateY writes never trigger layout or
-       * paint. */
-      section.querySelectorAll<SVGGElement>("[data-ks-col]").forEach((colEl) => {
-        const col = Number(colEl.dataset.ksCol);
-        if (col === CENTER_COL) return; // centre column stays fixed
-        gsap.to(colEl, {
-          y: col % 2 === 0 ? -DRIFT : DRIFT, // even up, odd down
-          ease: "none",
-          force3D: true,
+        tl
+          /* Phase 1 — flood: grid recedes, stadium fills white, ink turns
+           * grey. (GSAP's colour parser wants hex/rgb, not oklch.) Faster
+           * than before so the stadium lands white quickly and the user gets
+           * a beat to read the marching text before the magnify. */
+          .to(grid, { opacity: 0, duration: 0.18, force3D: true }, 0.05)
+          .to(fill, { fillOpacity: 1, duration: 0.15, force3D: true }, 0.07)
+          .to(stroke, { opacity: 0, duration: 0.12, force3D: true }, 0.09)
+          .to(text, { fill: "#8a8a8a", duration: 0.15, force3D: true }, 0.07)
+          /* Phase 2 — zoom from the stadium centre; the perimeter text
+           * becomes the giant left/right columns. On mobile the zoom is
+           * parked LATER (0.4 → 0.8 instead of 0.32 → 0.72): the zoomed
+           * white stadium covers a narrow phone viewport much sooner than
+           * a desktop one, which used to leave a long white tail before
+           * the pin released (the mobile white-scroll bug). Starting
+           * later + a shorter pinned span (200 %) cuts that tail to ~a
+           * third of its old length. */
+          .to(
+            zoom,
+            {
+              scale: ZOOM_FINAL,
+              svgOrigin: `${STADIUM_CX} ${STADIUM_CY}`,
+              duration: 0.4,
+              ease: "power2.inOut",
+              force3D: true,
+            },
+            zoomStart,
+          )
+          /* Phase 3 — whiteout veil matches the next section's bg colour
+           * (Success Stories = oklch(99% 0.005 240)), so when the pin
+           * releases the section exits on pure white and the transition is
+           * seamless. Starts just before the zoom completes so the stadium
+           * and the surrounding grid merge into one continuous white.
+           * Mobile: 0.82 → 0.98 (desktop: 0.8 → 1.0), so the veil lands
+           * exactly as the pin releases and the white tail ends with the
+           * section. */
+          .to(whiteout, { opacity: 1, duration: whiteoutDuration, force3D: true }, whiteoutStart);
+
+        /* Column drift — its own trigger so it also runs while the section
+         * scrolls into view, not just while pinned.
+         *
+         * ONE timeline + ONE trigger for ALL columns (the old build had 9
+         * parallel triggers, each reading scroll progress every frame — on
+         * mobile that's 9x the per-frame progress math while scrubbing
+         * SVG groups). A single trigger reads the scroll position once per
+         * frame and the tween updates are pure transform writes. */
+        const drift = gsap.timeline({
+          defaults: { ease: "none", force3D: true },
           scrollTrigger: {
             trigger: section,
             start: "top bottom",
-            end: "+=400%",
+            end: driftEnd,
             scrub: true,
           },
         });
+
+        section.querySelectorAll<SVGGElement>("[data-ks-col]").forEach((colEl) => {
+          const col = Number(colEl.dataset.ksCol);
+          if (col === CENTER_COL) return; // centre column stays fixed
+          drift.to(colEl, { y: col % 2 === 0 ? -DRIFT : DRIFT }, 0);
+        });
+      };
+
+      /* Mobile: shorter pinned span + later zoom + later whiteout (see the
+       * Phase 2 comment). Desktop: the original timing. */
+      mm.add("(max-width: 768px)", () => {
+        buildStage({ pinEnd: "+=200%", zoomStart: 0.4, whiteoutStart: 0.82, whiteoutDuration: 0.16, driftEnd: "+=300%" });
+      });
+
+      mm.add("(min-width: 769px)", () => {
+        buildStage({ pinEnd: "+=300%", zoomStart: 0.32, whiteoutStart: 0.8, whiteoutDuration: 0.2, driftEnd: "+=400%" });
       });
     }, section);
 
-    return () => ctx.revert();
+    return () => {
+      io.disconnect();
+      mm?.revert();
+      ctx.revert();
+    };
   }, []);
 
   return (

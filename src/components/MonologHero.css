@@ -452,13 +452,24 @@
    * prefers-reduced-motion fallback position the wordmark identically.
    *
    * Uses translate3d(... , 0) instead of translate() so the browser
-   * promotes this element to its own GPU composite layer from first
-   * paint, before GSAP ever runs. Without the third arg, the compositor
-   * only promotes the layer once a 3D transform is detected — and that
-   * detection can cause a one-frame paint on first scroll. */
+    * promotes this element to its own GPU composite layer from first
+    * paint, before GSAP ever runs. Without the third arg, the compositor
+    * only promotes the layer once a 3D transform is detected — and that
+    * detection can cause a one-frame paint on first scroll.
+    *
+    * Anchored in `dvh` (not `vh`) so the mobile hero stack — wordmark,
+    * pitch and CTA — shares ONE coordinate space with the hero's
+    * `min-height: 100dvh`. `vh` is the *large* viewport on Chrome
+    * Android and iOS Safari (URL bar hidden); `dvh` tracks the bar. A
+    * vh-anchored wordmark under a dvh-anchored hero collapses the
+    * mobile gaps whenever the URL bar is visible — the pitch/CTA/wordmark
+    * crowd together (the "cluttered hero" bug). On desktop dvh == vh, so
+    * this is a no-op there. GSAP's HeroWordmark tween reads
+    * window.innerHeight (the visual viewport, i.e. dvh-space), so the
+    * animation and the CSS first paint stay in lockstep. */
   transform: translate3d(
     calc(50vw - 50%),
-    calc(100vh - 100% - 5vw),
+    calc(100dvh - 100% - 5vw),
     0
   );
 
@@ -518,13 +529,13 @@
  * GPU layer promotion (see the long comment on the base transform
  * above). The variable itself is still updated so the GSAP set() in
  * HeroWordmark.tsx reads the matching per-breakpoint value via
- * getComputedStyle. */
+ * getComputedStyle. (dvh, not vh — see the base transform's comment.) */
 @media (min-width: 769px) {
   .m-hero__wordmark-display {
     --wordmark-bottom-offset: 2.5vw;
     transform: translate3d(
       calc(50vw - 50%),
-      calc(100vh - 100% - 2.5vw),
+      calc(100dvh - 100% - 2.5vw),
       0
     );
   }
@@ -559,11 +570,14 @@
    * here too. Declared on :root because the CTA below needs it as well and
    * is not a descendant of the pitch.
    *
-   * The `100dvh - 100vh` term reconciles two coordinate spaces: the pitch
-   * is positioned inside .m-hero (sized in dvh) while the wordmark is fixed
-   * and positioned in vh. On a phone with visible browser chrome those
-   * differ, and without the correction the gap drifts by exactly that
-   * delta. Where the two are equal the term is zero. */
+   * Everything in this stack is anchored in `dvh` — the hero is
+   * min-height: 100dvh, and the wordmark + CTA use dvh transforms/tops
+   * (see above) — so the gaps hold in EVERY URL-bar state. The old
+   * `calc(100dvh - 100vh + …)` reconciliation term is gone: on Chrome
+   * Android / iOS Safari `vh` is the LARGE viewport, so that term went
+   * NEGATIVE while the URL bar was visible and the pitch collapsed down
+   * onto the wordmark (the "cluttered hero"). With a single unit system
+   * the term is always zero. */
   :root {
     --wordmark-stack: calc(0.6 * clamp(4rem, 16.5vw, 30rem) + 5vw);
   }
@@ -572,7 +586,7 @@
     position: absolute;
     left: 0;
     right: 0;
-    bottom: calc(100dvh - 100vh + var(--wordmark-stack) + 15vh);
+    bottom: calc(var(--wordmark-stack) + 15dvh);
 
     /* Replaced by the bottom anchor above. */
     padding-top: 0;
@@ -588,17 +602,19 @@
    * swallow its clicks. So instead of `top: calc(100% + 2vh)` relative to
    * the pitch, the offset is recomputed against the viewport.
    *
-   * The pitch's bottom edge sits at `100vh - stack - 15vh` from the top of
-   * the hero, and the hero starts at the document origin, so adding the 2vh
-   * gives `100vh - stack - 13vh`. This holds regardless of how the
-   * paragraph wraps, because the pitch is bottom-anchored above.
+   * The pitch's bottom edge sits at `100dvh - stack - 15dvh` from the top
+   * of the hero, and the hero starts at the document origin, so adding the
+   * 2dvh gives `100dvh - stack - 13dvh`. This holds regardless of how the
+   * paragraph wraps, because the pitch is bottom-anchored above. (dvh —
+   * not vh — so the pill stays 2dvh under the paragraph in every URL-bar
+   * state; see the pitch comment.)
    *
    * `absolute`, not `fixed`: the pill has to scroll away with the hero. A
    * fixed pill would hang in the middle of the viewport over every section
    * below. */
   .m-hero__cta {
     position: absolute;
-    top: calc(100vh - var(--wordmark-stack) - 13vh);
+    top: calc(100dvh - var(--wordmark-stack) - 13dvh);
     left: 50%;
     right: auto;
     transform: translateX(-50%);

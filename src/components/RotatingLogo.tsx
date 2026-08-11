@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF, Environment } from "@react-three/drei";
 import * as THREE from "three";
@@ -25,6 +25,22 @@ import "./RotatingLogo.css";
  *
  * Perf: no transmission pass (unlike the previous glass look), so the
  * material is cheap; DPR stays capped at 1.
+ *
+ * Mobile perf — the footer logo is the page's biggest GPU/network drain,
+ * and it sits BELOW the fold:
+ *
+ *   • The whole <Canvas> is lazy-mounted. IntersectionObserver with a
+ *     1200px approach margin mounts it only when the footer is near —
+ *     until then there is no WebGL context at all and, crucially, no
+ *     fetch of the 47.5 MB /logos/ec-logo.glb (drei's useGLTF starts the
+ *     download on mount). Visitors who never reach the footer pay
+ *     nothing; on a slow mobile connection the model has a 1200px head
+ *     start to download before it scrolls into view.
+ *   • Scroll back out past the margin and the canvas unmounts again —
+ *     the r3f render loop (frameloop="always") otherwise redraws the
+ *     chrome material + IBL reflections EVERY frame, all session, even
+ *     while the footer is off-screen. drei caches the parsed GLB in JS
+ *     memory, so re-entering the footer re-mounts without re-fetching.
  *
  * Static 35° tilt on X + slow continuous Y rotation; pointer-events:none
  * on the wrapper so it never blocks hero clicks.
@@ -108,30 +124,59 @@ function ChromeLogo() {
   );
 }
 
+/** Px of scroll room around the viewport in which the footer logo is
+ *  considered "approaching". While it's beyond this margin the canvas
+ *  stays unmounted — no WebGL context, no GLB fetch, no render loop. */
+const APPROACH_MARGIN_PX = 1200;
+
 export function RotatingLogo() {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [near, setNear] = useState(false);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+
+    if (!("IntersectionObserver" in window)) {
+      setNear(true);
+      return;
+    }
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        setNear(entries.some((entry) => entry.isIntersecting));
+      },
+      { rootMargin: `${APPROACH_MARGIN_PX}px 0px` },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
-    <div aria-hidden="true" className="rotating-logo">
-      <Canvas
-        camera={{ position: [0, 0.2, 2.6], fov: 35 }}
-        dpr={[1, 1]}
-        gl={{
-          antialias: true,
-          alpha: true,
-          preserveDrawingBuffer: true,
-          powerPreference: "high-performance",
-        }}
-        onCreated={({ gl }) => {
-          gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.15;
-        }}
-      >
-        <ambientLight intensity={0.3} />
-        <directionalLight position={[3, 4, 3]} intensity={0.6} />
-        <Suspense fallback={null}>
-          <Environment preset="studio" background={false} environmentIntensity={2} />
-          <ChromeLogo />
-        </Suspense>
-      </Canvas>
+    <div ref={wrapRef} aria-hidden="true" className="rotating-logo">
+      {near && (
+        <Canvas
+          camera={{ position: [0, 0.2, 2.6], fov: 35 }}
+          dpr={[1, 1]}
+          gl={{
+            antialias: true,
+            alpha: true,
+            preserveDrawingBuffer: true,
+            powerPreference: "high-performance",
+          }}
+          onCreated={({ gl }) => {
+            gl.toneMapping = THREE.ACESFilmicToneMapping;
+            gl.toneMappingExposure = 1.15;
+          }}
+        >
+          <ambientLight intensity={0.3} />
+          <directionalLight position={[3, 4, 3]} intensity={0.6} />
+          <Suspense fallback={null}>
+            <Environment preset="studio" background={false} environmentIntensity={2} />
+            <ChromeLogo />
+          </Suspense>
+        </Canvas>
+      )}
     </div>
   );
 }
