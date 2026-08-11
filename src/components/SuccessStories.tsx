@@ -4,7 +4,6 @@ import { Fragment, useEffect, useRef, type CSSProperties } from "react";
 import Image from "next/image";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Noise from "./Noise";
 import "./SuccessStories.css";
 
 /**
@@ -127,20 +126,6 @@ export function SuccessStories() {
 
   return (
     <section ref={sectionRef} className="success-stories" id="success-stories">
-      {/* Subtle film-grain noise over the whole section. Pinned absolutely,
-       * pointer-events:none so it never blocks clicks. The .noise-overlay
-       * styles (100vw × 100vh) will overflow horizontally — clip it on the
-       * section so we don't trigger horizontal scroll. */}
-      <div className="success-stories__noise">
-        <Noise
-          patternSize={250}
-          patternScaleX={1}
-          patternScaleY={1}
-          patternRefreshInterval={2}
-          patternAlpha={12}
-        />
-      </div>
-
       <div className="success-stories__inner">
         {/* Col 1 — sticky label only. Spans every row in the section so
          * the label stays in view for the entire section's scroll height
