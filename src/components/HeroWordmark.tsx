@@ -6,6 +6,32 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
+/* Global ScrollTrigger behaviour (one place, applied to every trigger
+ * on the page):
+ *
+ *   • `ignoreMobileResize: true` — vertical resizes on touch devices
+ *     (address-bar hide/show) no longer trigger a refresh() that
+ *     re-measures every start/end mid-scroll and jumps the page
+ *     (GSAP added this exactly for the "page shifts when the URL bar
+ *     collapses" problem).
+ *   • `autoRefreshEvents: "DOMContentLoaded,resize"` — drop `load` from
+ *     the default ("visibilitychange,DOMContentLoaded,load,resize").
+ *     On Vercel `load` fires late (fonts, images, the 47 MB GLB) —
+ *     sometimes while the user is already scrolling — and a refresh at
+ *     that point moves every trigger and visibly shifts the page.
+ *     Fonts are the only genuinely layout-changing late asset; their
+ *     refresh is handled explicitly once after document.fonts.ready
+ *     below (all triggers exist by then), so positions stay accurate.
+ *
+ * Client-only: this file is SSR'd for the initial HTML, and config()
+ * touches browser APIs — guard against the prerender pass. */
+if (typeof window !== "undefined") {
+  ScrollTrigger.config({
+    ignoreMobileResize: true,
+    autoRefreshEvents: "DOMContentLoaded,resize",
+  });
+}
+
 /**
  * Hero wordmark — large `eventclassics` display type that lives at the
  * bottom of the hero, and scrolls/transforms into the top-left corner
@@ -172,25 +198,77 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
           scrub: true,
         },
       });
+
+      /* Scope the wordmark's difference-blend group to the glyphs'
+       * travel ENVELOPE instead of the full viewport. The group must
+       * cover both the start box (bottom-centre, scale 1) and the end
+       * box (top-left, scale targetScale) — blend + transform on the
+       * SAME element is the documented crop bug, so the group stays a
+       * static wrapper, but its bounds can shrink from inset: 0 to the
+       * union of the two boxes. The compositor's per-frame blend cost
+       * scales with the group's area, so this trims the full-screen
+       * re-blend (with a 120 Hz display the budget is 8.3 ms/frame).
+       * Sizing runs only on setup/resize — never per frame. */
+      const sizeBlendGroup = () => {
+        const group = document.querySelector<HTMLElement>(
+          ".m-hero__wordmark-blend",
+        );
+        if (!group || !wordmark.isConnected) return;
+        const w = wordmark.offsetWidth;
+        const h = wordmark.offsetHeight;
+        const startX = viewportWidth / 2 - w / 2;
+        const startY = viewportHeight - h - bottomPaddingPx;
+        const finalW = w * targetScale;
+        const finalH = h * targetScale;
+        const left = Math.min(startX, headerPadX);
+        const top = Math.min(startY, headerPadY);
+        const right = Math.max(startX + w, headerPadX + finalW);
+        const bottom = Math.max(startY + h, headerPadY + finalH);
+        group.style.left = `${Math.max(0, left)}px`;
+        group.style.top = `${Math.max(0, top)}px`;
+        group.style.width = `${Math.max(1, right - left)}px`;
+        group.style.height = `${Math.max(1, bottom - top)}px`;
+      };
+      sizeBlendGroup();
     };
 
     // Wait for the webfont to settle so offsetWidth/offsetHeight/fontSize
     // reflect the actual glyph metrics (Geist swaps in after first paint
     // and would otherwise throw off the initial baseline measurement).
+    //
+    // The explicit ScrollTrigger.refresh() after setup is the ONE
+    // controlled refresh for late-loading fonts (we removed `load` from
+    // autoRefreshEvents in ScrollTrigger.config above). Every other
+    // trigger on the page (KeepScrolling pin, Statement reveal,
+    // parallax…) was measured with pre-font metrics; this single
+    // refresh re-measures them all once, at load time, before the user
+    // can meaningfully scroll — instead of a refresh firing mid-scroll
+    // whenever `load` happened to complete.
     const fontsReady =
       typeof document !== "undefined" && document.fonts?.ready;
     if (fontsReady) {
-      fontsReady.then(setupAnimation);
+      fontsReady.then(() => {
+        setupAnimation();
+        ScrollTrigger.refresh();
+      });
     } else {
       setupAnimation();
     }
 
     // rAF-debounced resize: collapse bursts of resize events to a
-    // single recomputation per animation frame.
+    // single recomputation per animation frame. Rebuild only on WIDTH
+    // changes — a height-only resize (mobile address-bar hide/show)
+    // must not tear down and recreate the ScrollTrigger mid-gesture,
+    // which is exactly the "page jumps when the URL bar collapses"
+    // failure. Wordmark metrics only depend on width.
+    let lastWidth = window.innerWidth;
     const handleResize = () => {
       if (resizeRaf) cancelAnimationFrame(resizeRaf);
       resizeRaf = requestAnimationFrame(() => {
-        setupAnimation();
+        if (window.innerWidth !== lastWidth) {
+          lastWidth = window.innerWidth;
+          setupAnimation();
+        }
         resizeRaf = 0;
       });
     };

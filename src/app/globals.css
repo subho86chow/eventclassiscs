@@ -150,6 +150,12 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Opt out of browser scroll anchoring. Chrome/Safari otherwise
+     * adjust the scroll position to keep an anchor node stable when
+     * ScrollTrigger inserts the KeepScrolling pin-spacer or refreshes
+     * trigger positions — that compensation is the "page drifts down
+     * slightly" jolt while scrolling. We own the scroll layout. */
+    overflow-anchor: none;
   }
   /* Per-pixel invert for every text element on every bg. White text +
    * mix-blend-mode: difference means the compositor flips each glyph

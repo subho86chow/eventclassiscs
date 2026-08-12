@@ -161,7 +161,6 @@ export function RotatingLogo() {
           gl={{
             antialias: true,
             alpha: true,
-            preserveDrawingBuffer: true,
             powerPreference: "high-performance",
           }}
           onCreated={({ gl }) => {

@@ -98,27 +98,68 @@ export function SuccessStories() {
     gsap.registerPlugin(ScrollTrigger);
 
     const ctx = gsap.context(() => {
-      section
-        .querySelectorAll<HTMLElement>("[data-ss-parallax]")
-        .forEach((imageEl) => {
-          gsap.fromTo(
+      const frames = Array.from(
+        section.querySelectorAll<HTMLElement>("[data-ss-parallax]"),
+      );
+      if (frames.length === 0) return;
+
+      /* One timeline + ONE scrollTrigger for all four frames (the old
+       * build had 4 parallel triggers, each reading scroll progress
+       * every frame — on a 120 Hz display that's 4× the per-frame
+       * progress math, and every one of those triggers re-measures on
+       * refresh). The section-level trigger maps the section's full
+       * traversal onto a 0…1 timeline; each frame's tween is placed at
+       * the fraction of the section where that frame enters the
+       * viewport and spans exactly its own height fraction — provably
+       * identical to the old per-frame mapping, with one progress
+       * calculation per frame instead of four.
+       *
+       * Positions are baked from layout, so a window resize rebuilds
+       * the timeline via the ScrollTrigger "refresh" event (the same
+       * event per-frame triggers used to self-correct on). */
+      let tl: gsap.core.Timeline | null = null;
+
+      const buildTimeline = () => {
+        const sectionH = section.offsetHeight || 1;
+        tl = gsap.timeline({
+          defaults: { ease: "none", force3D: true },
+          scrollTrigger: {
+            trigger: section,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: true,
+          },
+        });
+        frames.forEach((imageEl) => {
+          const a = imageEl.offsetTop; // offset within the section
+          const h = imageEl.offsetHeight;
+          tl!.fromTo(
             imageEl,
             { yPercent: -PARALLAX_SHIFT },
             {
               yPercent: PARALLAX_SHIFT,
+              duration: h / sectionH,
               ease: "none",
-              /* Own GPU layer — the per-frame transform writes then never
-               * trigger layout or paint on the surrounding grid. */
               force3D: true,
-              scrollTrigger: {
-                trigger: imageEl.parentElement,
-                start: "top bottom",
-                end: "bottom top",
-                scrub: true,
-              },
             },
+            a / sectionH,
           );
         });
+      };
+
+      buildTimeline();
+
+      const onRefresh = () => {
+        tl?.kill();
+        tl = null;
+        buildTimeline();
+      };
+      ScrollTrigger.addEventListener("refresh", onRefresh);
+
+      return () => {
+        ScrollTrigger.removeEventListener("refresh", onRefresh);
+        tl?.kill();
+      };
     }, section);
 
     return () => ctx.revert();
