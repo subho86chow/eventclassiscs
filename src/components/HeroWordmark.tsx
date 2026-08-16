@@ -249,6 +249,38 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
         group.style.height = `${Math.max(1, bottom - top)}px`;
       };
       sizeBlendGroup();
+
+      // Snapshot the CTA's `top` so it stays locked at its setup-time
+      // position even when the mobile URL bar collapses or expands
+      // mid-scroll. The CTA's CSS uses `dvh` for `top`
+      // (calc(100dvh - var(--wordmark-stack) - 13dvh)), so it would
+      // normally recompute every time the bar state changes — while
+      // the GSAP-controlled wordmark stays put. That drift is the
+      // "gap jitter when stopping scroll mid-hero" symptom.
+      //
+      // Reading getComputedStyle(cta).top returns the CSS-evaluated
+      // px value at this moment (in document coords — the CTA is
+      // position: absolute with no positioned ancestor). Setting
+      // cta.style.top overrides the CSS rule with an inline px value,
+      // locking the CTA until the next setupAnimation() — which fires
+      // on width resize, the same time the CSS media query may swap
+      // between the mobile (position: absolute) and desktop
+      // (position: fixed) rules, so the snapshot stays consistent
+      // with whichever CSS rule is active.
+      //
+      // Desktop (position: fixed) doesn't have this issue — the CTA
+      // lives in viewport coords there and doesn't drift with the URL
+      // bar in the same way — so we skip the snapshot on desktop.
+      const cta = document.querySelector<HTMLElement>(".m-hero__cta");
+      if (cta) {
+        const ctaStyle = getComputedStyle(cta);
+        if (ctaStyle.position === "absolute") {
+          const ctaTopPx = parseFloat(ctaStyle.top);
+          if (isFinite(ctaTopPx)) {
+            cta.style.top = `${ctaTopPx}px`;
+          }
+        }
+      }
     };
 
     // Wait for the webfont to settle so offsetWidth/offsetHeight/fontSize
