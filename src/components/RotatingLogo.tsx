@@ -2,29 +2,28 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useGLTF, Environment } from "@react-three/drei";
+import {
+  Environment,
+  Lightformer,
+  MeshTransmissionMaterial,
+  useGLTF,
+} from "@react-three/drei";
 import * as THREE from "three";
 import "./RotatingLogo.css";
 
 /**
  * Hallmark · top-right rotating logo (page chrome).
  *
- * Client component. Loads /logos/ec-logo.glb and overrides every mesh's
- * material with a "liquid metal" chrome MeshPhysicalMaterial — the 3D
- * analogue of the hero's white-on-white LiquidMetal shader:
- *   metalness: 1.0           — fully metallic
- *   roughness: 0.1          — near-mirror surface
- *   clearcoat: 1.0          — wet liquid gloss
- *   envMapIntensity: 3.5    — strong chrome reflections
+ * Client component. Loads /logos/3D-EC-Logo.glb, bakes the authored mesh
+ * transform into a centred 1.5-unit geometry, and renders it with drei's
+ * refractive MeshTransmissionMaterial. Chromatic aberration, gentle animated
+ * distortion, volume thickness, and clearcoat give the mark a liquid-glass
+ * surface instead of a smoky transparent fill.
  *
- * drei's <Environment preset="studio" /> provides the IBL the chrome needs —
- * the bright studio boxes are what give the surface its white, liquid-metal
- * sheen (matching the hero's white-on-white LiquidMetal shader) instead of
- * the dark reflections a city/night map would smear across it.
- * Canvas is transparent (alpha: true) — the page bg shows behind the model.
- *
- * Perf: no transmission pass (unlike the previous glass look), so the
- * material is cheap; DPR stays capped at 1.
+ * Reflections come from local Lightformers and refraction samples a generated
+ * ice-blue backdrop that is visible only to the material's transmission pass.
+ * Nothing is fetched from an external HDR service and the WebGL canvas itself
+ * remains transparent over the footer.
  *
  * Mobile perf — the footer logo is the page's biggest GPU/network drain,
  * and it sits BELOW the fold:
@@ -32,78 +31,112 @@ import "./RotatingLogo.css";
  *   • The whole <Canvas> is lazy-mounted. IntersectionObserver with a
  *     1200px approach margin mounts it only when the footer is near —
  *     until then there is no WebGL context at all and, crucially, no
- *     fetch of the 47.5 MB /logos/ec-logo.glb (drei's useGLTF starts the
+ *     fetch of the ~190 KB /logos/3D-EC-Logo.glb (drei's useGLTF starts the
  *     download on mount). Visitors who never reach the footer pay
  *     nothing; on a slow mobile connection the model has a 1200px head
  *     start to download before it scrolls into view.
  *   • Scroll back out past the margin and the canvas unmounts again —
  *     the r3f render loop (frameloop="always") otherwise redraws the
- *     chrome material + IBL reflections EVERY frame, all session, even
+ *     liquid-glass material EVERY frame, all session, even
  *     while the footer is off-screen. drei caches the parsed GLB in JS
  *     memory, so re-entering the footer re-mounts without re-fetching.
  *
- * Static 35° tilt on X + slow continuous Y rotation; pointer-events:none
+ * Static tilt on X + slow continuous Y rotation; pointer-events:none
  * on the wrapper so it never blocks hero clicks.
  */
 
-const MODEL_URL = "/logos/ec-logo.glb";
+const MODEL_URL = "/logos/3D-EC-Logo.glb";
 
-function ChromeLogo() {
-  const groupRef = useRef<THREE.Group>(null);
+function createLiquidBackdrop() {
+  const width = 192;
+  const height = 192;
+  const pixels = new Uint8Array(width * height * 4);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const u = x / (width - 1);
+      const v = y / (height - 1);
+      const diagonal = Math.exp(-Math.pow((u + v * 0.42) - 0.72, 2) / 0.012);
+      const coolGlow = Math.exp(
+        -(Math.pow(u - 0.78, 2) + Math.pow(v - 0.3, 2)) / 0.055,
+      );
+      const softGlow = Math.exp(
+        -(Math.pow(u - 0.24, 2) + Math.pow(v - 0.78, 2)) / 0.075,
+      );
+      const index = (y * width + x) * 4;
+
+      pixels[index] = Math.min(255, 8 + diagonal * 112 + softGlow * 35);
+      pixels[index + 1] = Math.min(
+        255,
+        12 + diagonal * 142 + coolGlow * 76 + softGlow * 24,
+      );
+      pixels[index + 2] = Math.min(
+        255,
+        18 + diagonal * 170 + coolGlow * 118 + softGlow * 68,
+      );
+      pixels[index + 3] = 255;
+    }
+  }
+
+  const texture = new THREE.DataTexture(
+    pixels,
+    width,
+    height,
+    THREE.RGBAFormat,
+    THREE.UnsignedByteType,
+  );
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function LiquidGlassLogo() {
+  const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
   const gltf = useGLTF(MODEL_URL);
 
-  // Clone + center + scale-to-fit + swap the imported material for the
-  // liquid-metal chrome. Done once per GLB load.
-  const scene = useMemo(() => {
-    const cloned = gltf.scene.clone(true);
-    const box = new THREE.Box3().setFromObject(cloned);
+  // The GLB contains one mesh with a large authored node transform. Bake that
+  // transform into a private geometry before centring/scaling so subsequent
+  // rotation always happens around the visible mark's true centre.
+  const geometry = useMemo(() => {
+    gltf.scene.updateMatrixWorld(true);
+    const source = gltf.scene.getObjectByProperty("type", "Mesh");
+    if (!(source instanceof THREE.Mesh)) return null;
+
+    const baked = source.geometry.clone();
+    baked.applyMatrix4(source.matrixWorld);
+    baked.computeBoundingBox();
+
+    const box = baked.boundingBox;
+    if (!box) return null;
+
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
-
-    cloned.position.sub(center);
 
     const maxDim = Math.max(size.x, size.y, size.z) || 1;
     // 1.5 world units + camera at z=2.6 with FOV 35 → visible height ≈
     // 1.65 world units, so the wide-and-flat EC mark fits with a hair
     // of margin instead of clipping the canvas edges.
     const target = 1.5;
-    cloned.scale.setScalar(target / maxDim);
+    const scale = target / maxDim;
 
-    // Override every mesh's material with a "liquid metal" chrome look
-    // (the 3D analogue of the hero's white-on-white LiquidMetal shader):
-    // fully metallic, near-mirror surface with a wet clearcoat gloss.
-    // The IBL does the heavy lifting — the city env map's sharp
-    // reflections are what sell the liquid chrome read.
-    //
-    //   metalness: 1.0         — fully metallic (no diffuse colour)
-    //   roughness: 0.1         — near-mirror, slightly softened
-    //   clearcoat: 1.0         — wet gloss layer on top of the metal
-    //   envMapIntensity: 3.5   — strong chrome reflections off the IBL
-    //
-    // No transmission / dispersion / iridescence: those are the glass
-    // look (transmission) and a rainbow fringe (iridescence). Liquid
-    // chrome is monochrome, matching the hero's white-on-white shader.
-    // Dropping the transmission pass also removes the dominant shader
-    // cost — the renderer no longer needs transmissionResolutionScale.
-    const chrome = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      metalness: 1.0,
-      roughness: 0.1,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.08,
-      envMapIntensity: 3.5,
-      side: THREE.DoubleSide,
-    });
-
-    cloned.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.material = chrome;
-      }
-    });
-
-    return cloned;
+    baked.translate(-center.x, -center.y, -center.z);
+    baked.scale(scale, scale, scale);
+    baked.computeBoundingBox();
+    baked.computeBoundingSphere();
+    return baked;
   }, [gltf]);
+
+  const liquidBackdrop = useMemo(createLiquidBackdrop, []);
+
+  useEffect(() => {
+    return () => {
+      geometry?.dispose();
+      liquidBackdrop.dispose();
+    };
+  }, [geometry, liquidBackdrop]);
 
   useEffect(() => {
     camera.position.set(0, 0.2, 2.6);
@@ -112,15 +145,41 @@ function ChromeLogo() {
   }, [camera]);
 
   useFrame((_, delta) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y += delta * 0.4; // ≈ 23°/s — slow, deliberate
+    if (meshRef.current) {
+      meshRef.current.rotation.y += delta * 0.4; // ≈ 23°/s — slow, deliberate
     }
   });
 
+  if (!geometry) return null;
+
   return (
-    <group ref={groupRef}>
-      <primitive object={scene} />
-    </group>
+    <mesh ref={meshRef} geometry={geometry} rotation={[-0.1, -0.28, 0]}>
+      <MeshTransmissionMaterial
+        background={liquidBackdrop}
+        backside
+        backsideThickness={0.42}
+        backsideResolution={192}
+        resolution={256}
+        samples={6}
+        transmission={1}
+        thickness={0.36}
+        roughness={0.08}
+        ior={1.28}
+        chromaticAberration={0.075}
+        anisotropy={0.18}
+        distortion={0.22}
+        distortionScale={0.58}
+        temporalDistortion={0.08}
+        attenuationColor="#c3edff"
+        attenuationDistance={1.25}
+        clearcoat={1}
+        clearcoatRoughness={0.045}
+        specularIntensity={1}
+        specularColor="#ffffff"
+        envMapIntensity={2.25}
+        color="#e8f8ff"
+      />
+    </mesh>
   );
 }
 
@@ -137,12 +196,13 @@ export function RotatingLogo() {
     const el = wrapRef.current;
     if (!el) return;
 
-    if (!("IntersectionObserver" in window)) {
-      setNear(true);
-      return;
+    const IntersectionObserverConstructor = window.IntersectionObserver;
+    if (typeof IntersectionObserverConstructor !== "function") {
+      const frame = window.requestAnimationFrame(() => setNear(true));
+      return () => window.cancelAnimationFrame(frame);
     }
 
-    const io = new IntersectionObserver(
+    const io = new IntersectionObserverConstructor(
       (entries) => {
         setNear(entries.some((entry) => entry.isIntersecting));
       },
@@ -165,14 +225,56 @@ export function RotatingLogo() {
           }}
           onCreated={({ gl }) => {
             gl.toneMapping = THREE.ACESFilmicToneMapping;
-            gl.toneMappingExposure = 1.15;
+            gl.toneMappingExposure = 1.25;
           }}
         >
-          <ambientLight intensity={0.3} />
-          <directionalLight position={[3, 4, 3]} intensity={0.6} />
+          <ambientLight intensity={0.35} />
+          <directionalLight
+            position={[3, 4, 3]}
+            intensity={2.2}
+            color="#f1fbff"
+          />
+          <pointLight
+            position={[-2.5, -0.5, 2]}
+            intensity={5}
+            distance={7}
+            decay={2}
+            color="#78cbff"
+          />
+
           <Suspense fallback={null}>
-            <Environment preset="studio" background={false} environmentIntensity={2} />
-            <ChromeLogo />
+            <Environment
+              resolution={128}
+              frames={1}
+              background={false}
+              environmentIntensity={1.35}
+            >
+              <Lightformer
+                form="rect"
+                color="#ffffff"
+                intensity={7}
+                position={[0, 2, 2]}
+                scale={[4, 0.65, 1]}
+                target={[0, 0, 0]}
+              />
+              <Lightformer
+                form="rect"
+                color="#9bdcff"
+                intensity={4.5}
+                position={[-2, 0, 1.5]}
+                scale={[0.7, 3, 1]}
+                target={[0, 0, 0]}
+              />
+              <Lightformer
+                form="ring"
+                color="#fff4e8"
+                intensity={3}
+                position={[2, -0.4, 1.2]}
+                scale={1.8}
+                target={[0, 0, 0]}
+              />
+            </Environment>
+            <LiquidGlassLogo />
           </Suspense>
         </Canvas>
       )}

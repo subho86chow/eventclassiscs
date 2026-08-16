@@ -106,6 +106,54 @@ export function KeepScrolling() {
     const svg = svgRef.current;
     if (!section || !svg) return;
 
+    /* Align the SMIL march loop to ONE repetition of the text instead of
+     * one full path length. The −100% shift (one stadium perimeter ≈ 514
+     * user units) is NOT an integer multiple of the repetition advance
+     * (≈ 164 units), so the loop wrap lands mid-phrase and the pill
+     * visibly snaps / overruns at the seam. Shifting by exactly the
+     * measured repetition width keeps every wrap pixel-identical because
+     * the string is periodic with that period. */
+    const path = section.querySelector<SVGPathElement>("#keep-scrolling-stadium");
+    const march = section.querySelector<SVGAnimateElement>("[data-ks-march]");
+
+    const alignMarchToRepetition = () => {
+      if (!path || !march) return;
+      const pathLen = path.getTotalLength();
+
+      /* Measure the real laid-out advance of ONE "KEEP SCROLLING • " —
+       * plain <text> (no textPath) so getComputedTextLength returns the
+       * horizontal advance in user units for the loaded Archivo face. */
+      const probe = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      probe.setAttribute("class", "keep-scrolling__text");
+      probe.setAttribute("x", "-100000");
+      probe.setAttribute("y", "-100000");
+      probe.textContent = REPEAT;
+      svg.appendChild(probe);
+      const repWidth = probe.getComputedTextLength();
+      svg.removeChild(probe);
+
+      if (!(repWidth > 0)) return;
+
+      /* Shift by exactly one repetition per cycle. */
+      march.setAttribute("to", `${(-(repWidth / pathLen) * 100).toFixed(4)}%`);
+      /* Keep the original march *speed* (one loop ≈ 22 s): the new cycle
+       * covers repWidth instead of pathLen, so scale the duration. */
+      march.setAttribute("dur", `${(22 * (repWidth / pathLen)).toFixed(3)}s`);
+    };
+
+    /* Fonts must be loaded before measuring, else the probe lays out in
+     * the fallback face. document.fonts.ready resolves once every pending
+     * webfont finished; in the reduced-motion path we still apply the
+     * alignment so the static frame is seamless too. */
+    const measureOnFontsReady = () => {
+      if (typeof document !== "undefined" && document.fonts?.ready) {
+        document.fonts.ready.then(alignMarchToRepetition).catch(alignMarchToRepetition);
+      } else {
+        alignMarchToRepetition();
+      }
+    };
+    measureOnFontsReady();
+
     /* Reduced motion: freeze the SMIL text march, skip the pin/drift —
      * the section renders as its static initial frame. */
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -320,10 +368,15 @@ export function KeepScrolling() {
             <textPath href="#keep-scrolling-stadium" startOffset="0%">
               {SCROLL_TEXT}
               {/* March the text around the stadium loop indefinitely.
-                * -100% lands on the start of the next repetition, making
-                * the loop seamless. Untouched by GSAP — it keeps marching
-                * through the flood and the whiteout. */}
+                * JS re-targets this cycle to shift by exactly ONE
+                * "KEEP SCROLLING • " repetition (the string's period) at
+                * runtime — a −100%-of-path cycle would land mid-phrase
+                * and snap at the seam, because the perimeter is not an
+                * integer multiple of the repetition width. Untouched by
+                * GSAP — it keeps marching through the flood and the
+                * whiteout. */}
               <animate
+                data-ks-march
                 attributeName="startOffset"
                 from="0%"
                 to="-100%"
