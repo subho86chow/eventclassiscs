@@ -48,6 +48,30 @@ if (typeof window !== "undefined") {
  * sits at the top-left of the sticky nav (its padding-left/top, read at
  * setup time).
  *
+ * Coordinate-system contract (mobile scroll-stability fix):
+ *
+ *   The CSS transform on .m-hero__wordmark-display uses `dvh`
+ *   (translate3d(50vw - 50%, 100dvh - 100% - 5vw, 0)), so the initial
+ *   position tracks the mobile URL-bar state LIVE. We read that live
+ *   position via getBoundingClientRect() at setup and align GSAP's
+ *   transform with it (gsap.set) — no innerHeight snapshot, no risk
+ *   of CSS and JS disagreeing when the URL bar collapses/expands
+ *   mid-scroll.
+ *
+ *   The tween then animates the delta from that anchor to the sticky
+ *   header corner. Both endpoints shift by the SAME amount under a
+ *   URL-bar change, so the deltas are invariant and the setup-time
+ *   snapshot stays correct for the tween's lifetime. That's why
+ *   `ignoreMobileResize: true` + a width-only resize handler still
+ *   give correct layout when the bar moves mid-scroll.
+ *
+ *   Previous version (pre-fix) snapshotted window.innerHeight at
+ *   setup and computed the start position in JS. On mobile, the URL
+ *   bar collapses as the user scrolls; CSS `dvh` shifted but JS's
+ *   snapshotted position did not — so the wordmark drifted relative
+ *   to the pitch and CTA by ~40–60 px during the scroll, breaking
+ *   the visual rhythm of the mobile hero.
+ *
  * Smoothness tuning (the difference between "feels good" and "jittery"):
  *   • `force3D: true` on both set and to — keeps the element on its own
  *     GPU composite layer via translate3d() so the compositor doesn't
@@ -79,14 +103,6 @@ if (typeof window !== "undefined") {
 const HEADER_PAD_X_FALLBACK = 20; // px — fallback if nav padding can't be read
 const HEADER_PAD_Y_FALLBACK = 16; // px — fallback if nav padding can't be read
 const TARGET_FONT_SIZE = 24; // px — final wordmark size (≈ header-logo scale)
-
-/** Fallback bottom offset (vw) used only if the CSS
- *  --wordmark-bottom-offset custom property can't be read at setup
- *  time (very old browser, JIT race, etc.). The actual per-breakpoint
- *  values live in MonologHero.css — 5 vw on mobile (≤ 768 px), 2.5 vw
- *  on desktop and tablet (> 768 px). Mirrors the mobile value the hero
- *  uses for its horizontal padding (the "90 vw content area"). */
-const INITIAL_BOTTOM_PADDING_VW = 5;
 
 // Adaptive frame-rate handling. If the gap between rAF ticks exceeds
 // 500 ms we assume a tab-switch and stop compensating (don't fast-forward
@@ -132,11 +148,6 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
       if (!isFinite(initialFontSize) || initialFontSize <= 0) return;
       const targetScale = TARGET_FONT_SIZE / initialFontSize;
 
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const elementWidth = wordmark.offsetWidth;
-      const elementHeight = wordmark.offsetHeight;
-
       // Read the actual rendered padding of the sticky nav so the
       // wordmark's final position aligns with the nav's left edge and
       // top edge. This keeps it visually anchored to the header band
@@ -153,26 +164,26 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
         if (isFinite(navPadTop)) headerPadY = navPadTop;
       }
 
-      // Initial visual position: bottom-centre of viewport with
-      // --wordmark-bottom-offset (5 vw on mobile, 2.5 vw on
-      // desktop/tablet) of breathing room below the glyph row. Read
-      // the value from the wordmark's computed style so the CSS
-      // media query and the JS stay in lockstep — the resize handler
-      // below re-reads it on every viewport change, so the value
-      // tracks breakpoint crossings in real time.
+      // Initial visual position: bottom-centre of viewport, with 5 vw
+      // of breathing room below the glyph row on mobile, 2.5 vw on
+      // desktop / tablet. The transform ITSELF is owned by CSS
+      // (translate3d(50vw - 50%, 100dvh - 100% - 5vw, 0) on mobile;
+      // overridden per-breakpoint in MonologHero.css) — we read that
+      // live CSS-anchored position via getBoundingClientRect() and
+      // align GSAP's transform with it. The handoff from CSS to JS is
+      // seamless (no flicker on mount), AND because the CSS anchor
+      // uses `dvh`, the wordmark stays in lockstep with .m-hero__pitch
+      // / .m-hero__cta (also dvh-anchored) when the mobile URL bar
+      // collapses mid-scroll. No innerHeight snapshot needed in JS:
+      // getBoundingClientRect() already reflects the dvh-driven CSS
+      // position at the moment we read it.
+      //
       // force3D: true pins translate3d() so the compositor keeps this
-      // element on its own GPU layer for the entire animation. The
-      // bottom-padding value is computed in CSS pixels because GSAP's
-      // y is a length, not a viewport-relative unit.
-      const offsetStr = getComputedStyle(wordmark)
-        .getPropertyValue("--wordmark-bottom-offset")
-        .trim();
-      const offsetVw =
-        parseFloat(offsetStr) || INITIAL_BOTTOM_PADDING_VW;
-      const bottomPaddingPx = (offsetVw / 100) * viewportWidth;
+      // element on its own GPU layer for the entire animation.
+      const startRect = wordmark.getBoundingClientRect();
       gsap.set(wordmark, {
-        x: viewportWidth / 2 - elementWidth / 2,
-        y: viewportHeight - elementHeight - bottomPaddingPx,
+        x: startRect.left,
+        y: startRect.top,
         scale: 1,
         force3D: true,
       });
@@ -216,8 +227,16 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
         if (!group || !wordmark.isConnected) return;
         const w = wordmark.offsetWidth;
         const h = wordmark.offsetHeight;
-        const startX = viewportWidth / 2 - w / 2;
-        const startY = viewportHeight - h - bottomPaddingPx;
+        // Start bounds are the wordmark's actual rendered rect (which is
+        // wherever the dvh-anchored CSS transform put it), NOT a JS
+        // snapshot of viewportHeight from setup. End bounds are the
+        // header corner. Both are invariant under URL-bar changes once
+        // GSAP takes over the transform (the wordmark doesn't drift
+        // with the bar — GSAP's transform is fixed at setup time, and
+        // both endpoints shifted together at the moment of capture).
+        const rect = wordmark.getBoundingClientRect();
+        const startX = rect.left;
+        const startY = rect.top;
         const finalW = w * targetScale;
         const finalH = h * targetScale;
         const left = Math.min(startX, headerPadX);
