@@ -5,7 +5,6 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   Environment,
   Lightformer,
-  MeshTransmissionMaterial,
   useGLTF,
 } from "@react-three/drei";
 import * as THREE from "three";
@@ -15,15 +14,15 @@ import "./RotatingLogo.css";
  * Hallmark · top-right rotating logo (page chrome).
  *
  * Client component. Loads /logos/3D-EC-Logo.glb, bakes the authored mesh
- * transform into a centred 1.5-unit geometry, and renders it with drei's
- * refractive MeshTransmissionMaterial. Chromatic aberration, gentle animated
- * distortion, volume thickness, and clearcoat give the mark a liquid-glass
- * surface instead of a smoky transparent fill.
+ * transform into a centred 1.5-unit geometry, and renders it as liquid chrome.
+ * A near-mirror MeshPhysicalMaterial supplies the black/white reflection bands
+ * while a thin additive Fresnel pass supplies the hero shader's red/cyan colour
+ * separation around the contour.
  *
- * Reflections come from local Lightformers and refraction samples a generated
- * ice-blue backdrop that is visible only to the material's transmission pass.
- * Nothing is fetched from an external HDR service and the WebGL canvas itself
- * remains transparent over the footer.
+ * The visual translation follows LiquidMetalBg.tsx: its white-on-white palette
+ * becomes neutral silver, shiftRed/shiftBlue become the chromatic rim, and its
+ * high contour becomes broad bright studio bands over deep black reflections.
+ * Local Lightformers provide those bands without an external HDR download.
  *
  * Mobile perf — the footer logo is the page's biggest GPU/network drain,
  * and it sits BELOW the fold:
@@ -37,7 +36,7 @@ import "./RotatingLogo.css";
  *     start to download before it scrolls into view.
  *   • Scroll back out past the margin and the canvas unmounts again —
  *     the r3f render loop (frameloop="always") otherwise redraws the
- *     liquid-glass material EVERY frame, all session, even
+ *     liquid-metal material EVERY frame, all session, even
  *     while the footer is off-screen. drei caches the parsed GLB in JS
  *     memory, so re-entering the footer re-mounts without re-fetching.
  *
@@ -47,53 +46,46 @@ import "./RotatingLogo.css";
 
 const MODEL_URL = "/logos/3D-EC-Logo.glb";
 
-function createLiquidBackdrop() {
-  const width = 192;
-  const height = 192;
-  const pixels = new Uint8Array(width * height * 4);
+const CHROMATIC_RIM_VERTEX = `
+  varying vec3 vViewNormal;
+  varying vec3 vViewPosition;
 
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const u = x / (width - 1);
-      const v = y / (height - 1);
-      const diagonal = Math.exp(-Math.pow((u + v * 0.42) - 0.72, 2) / 0.012);
-      const coolGlow = Math.exp(
-        -(Math.pow(u - 0.78, 2) + Math.pow(v - 0.3, 2)) / 0.055,
-      );
-      const softGlow = Math.exp(
-        -(Math.pow(u - 0.24, 2) + Math.pow(v - 0.78, 2)) / 0.075,
-      );
-      const index = (y * width + x) * 4;
+  void main() {
+    vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+    vViewNormal = normalize(normalMatrix * normal);
+    vViewPosition = viewPosition.xyz;
+    gl_Position = projectionMatrix * viewPosition;
+  }
+`;
 
-      pixels[index] = Math.min(255, 8 + diagonal * 112 + softGlow * 35);
-      pixels[index + 1] = Math.min(
-        255,
-        12 + diagonal * 142 + coolGlow * 76 + softGlow * 24,
-      );
-      pixels[index + 2] = Math.min(
-        255,
-        18 + diagonal * 170 + coolGlow * 118 + softGlow * 68,
-      );
-      pixels[index + 3] = 255;
-    }
+const CHROMATIC_RIM_FRAGMENT = `
+  varying vec3 vViewNormal;
+  varying vec3 vViewPosition;
+
+  vec3 spectrum(float t) {
+    return 0.52 + 0.48 * cos(
+      6.2831853 * (t + vec3(0.0, 0.34, 0.67))
+    );
   }
 
-  const texture = new THREE.DataTexture(
-    pixels,
-    width,
-    height,
-    THREE.RGBAFormat,
-    THREE.UnsignedByteType,
-  );
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  return texture;
-}
+  void main() {
+    vec3 normal = normalize(vViewNormal);
+    normal = gl_FrontFacing ? normal : -normal;
 
-function LiquidGlassLogo() {
-  const meshRef = useRef<THREE.Mesh>(null);
+    vec3 viewDirection = normalize(-vViewPosition);
+    float facing = clamp(abs(dot(normal, viewDirection)), 0.0, 1.0);
+    float rim = smoothstep(0.08, 0.82, pow(1.0 - facing, 3.0));
+
+    float orientation = dot(normal, normalize(vec3(0.66, 0.36, 0.66)));
+    vec3 chroma = spectrum(orientation * 0.34 + vViewPosition.y * 0.08);
+    vec3 colour = chroma * 1.45 + vec3(0.28) * rim;
+
+    gl_FragColor = vec4(colour, rim * 0.72);
+  }
+`;
+
+function LiquidMetalLogo() {
+  const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
   const gltf = useGLTF(MODEL_URL);
 
@@ -129,14 +121,11 @@ function LiquidGlassLogo() {
     return baked;
   }, [gltf]);
 
-  const liquidBackdrop = useMemo(createLiquidBackdrop, []);
-
   useEffect(() => {
     return () => {
       geometry?.dispose();
-      liquidBackdrop.dispose();
     };
-  }, [geometry, liquidBackdrop]);
+  }, [geometry]);
 
   useEffect(() => {
     camera.position.set(0, 0.2, 2.6);
@@ -145,41 +134,43 @@ function LiquidGlassLogo() {
   }, [camera]);
 
   useFrame((_, delta) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y += delta * 0.4; // ≈ 23°/s — slow, deliberate
+    if (groupRef.current) {
+      groupRef.current.rotation.y += delta * 0.4; // ≈ 23°/s — slow, deliberate
     }
   });
 
   if (!geometry) return null;
 
   return (
-    <mesh ref={meshRef} geometry={geometry} rotation={[-0.1, -0.28, 0]}>
-      <MeshTransmissionMaterial
-        background={liquidBackdrop}
-        backside
-        backsideThickness={0.42}
-        backsideResolution={192}
-        resolution={256}
-        samples={6}
-        transmission={1}
-        thickness={0.36}
-        roughness={0.08}
-        ior={1.28}
-        chromaticAberration={0.075}
-        anisotropy={0.18}
-        distortion={0.22}
-        distortionScale={0.58}
-        temporalDistortion={0.08}
-        attenuationColor="#c3edff"
-        attenuationDistance={1.25}
-        clearcoat={1}
-        clearcoatRoughness={0.045}
-        specularIntensity={1}
-        specularColor="#ffffff"
-        envMapIntensity={2.25}
-        color="#e8f8ff"
-      />
-    </mesh>
+    <group ref={groupRef} rotation={[-0.1, -0.28, 0]}>
+      <mesh geometry={geometry} renderOrder={1}>
+        <meshPhysicalMaterial
+          color="#ffffff"
+          metalness={1}
+          roughness={0.085}
+          clearcoat={1}
+          clearcoatRoughness={0.035}
+          envMapIntensity={3.2}
+          iridescence={0.28}
+          iridescenceIOR={1.18}
+          iridescenceThicknessRange={[110, 260]}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh geometry={geometry} scale={1.008} renderOrder={2}>
+        <shaderMaterial
+          vertexShader={CHROMATIC_RIM_VERTEX}
+          fragmentShader={CHROMATIC_RIM_FRAGMENT}
+          transparent
+          depthWrite={false}
+          depthTest
+          side={THREE.DoubleSide}
+          blending={THREE.AdditiveBlending}
+          toneMapped={false}
+        />
+      </mesh>
+    </group>
   );
 }
 
@@ -236,10 +227,10 @@ export function RotatingLogo() {
           />
           <pointLight
             position={[-2.5, -0.5, 2]}
-            intensity={5}
+            intensity={3.5}
             distance={7}
             decay={2}
-            color="#78cbff"
+            color="#ffffff"
           />
 
           <Suspense fallback={null}>
@@ -247,34 +238,34 @@ export function RotatingLogo() {
               resolution={128}
               frames={1}
               background={false}
-              environmentIntensity={1.35}
+              environmentIntensity={1.6}
             >
               <Lightformer
                 form="rect"
                 color="#ffffff"
-                intensity={7}
-                position={[0, 2, 2]}
-                scale={[4, 0.65, 1]}
+                intensity={8}
+                position={[0.5, 2, 2]}
+                scale={[4.5, 0.55, 1]}
                 target={[0, 0, 0]}
               />
               <Lightformer
                 form="rect"
-                color="#9bdcff"
-                intensity={4.5}
+                color="#ffffff"
+                intensity={5}
                 position={[-2, 0, 1.5]}
-                scale={[0.7, 3, 1]}
+                scale={[0.55, 3.5, 1]}
                 target={[0, 0, 0]}
               />
               <Lightformer
                 form="ring"
-                color="#fff4e8"
-                intensity={3}
+                color="#ffffff"
+                intensity={4}
                 position={[2, -0.4, 1.2]}
                 scale={1.8}
                 target={[0, 0, 0]}
               />
             </Environment>
-            <LiquidGlassLogo />
+            <LiquidMetalLogo />
           </Suspense>
         </Canvas>
       )}
