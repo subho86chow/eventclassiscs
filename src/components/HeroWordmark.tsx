@@ -281,6 +281,55 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
           }
         }
       }
+
+      // Lock the hero's min-height at setup time so it doesn't grow
+      // with `dvh`. Without this, the hero's `min-height: 100dvh`
+      // grows when the URL bar collapses (dvh grows), dragging the
+      // pitch (which is anchored to the hero's bottom) down by ~85 px
+      // per 100 px dvh delta. With the hero height locked AND the
+      // pitch's `bottom` snapshotted (below), the pitch's document
+      // position is also fixed, and the pitch↔CTA gap is constant.
+      //
+      // Side effect: when dvh grows beyond the locked value (e.g.,
+      // URL bar collapses on mobile), the hero no longer expands to
+      // fill the taller viewport — the next section becomes visible
+      // at the bottom of the hero earlier than before. This is a
+      // subtle visual change compared to the pre-fix behaviour, but
+      // it's necessary to keep the pitch↔CTA gap stable across
+      // URL-bar state changes (otherwise the gap drifts by ~85 px
+      // per 100 px dvh delta, which is far more visible than the
+      // hero-height trade-off).
+      const heroEl = document.querySelector<HTMLElement>(".m-hero");
+      if (heroEl) {
+        const heroHeightPx = heroEl.getBoundingClientRect().height;
+        if (isFinite(heroHeightPx) && heroHeightPx > 0) {
+          heroEl.style.minHeight = `${heroHeightPx}px`;
+        }
+      }
+
+      // Snapshot the pitch's `bottom` so it stays locked at its
+      // setup-time distance from the hero's bottom (in px). With the
+      // hero's height locked above, a fixed `bottom` from the hero
+      // bottom means the pitch's document position is also fixed.
+      //
+      // Reading getComputedStyle(pitch).bottom returns the CSS-
+      // evaluated px value at this moment (calc(stack + 15dvh)
+      // evaluated). Setting pitch.style.bottom overrides the CSS
+      // rule with an inline px value, locking the pitch until the
+      // next setupAnimation() — which fires on width resize, the same
+      // time the CSS media query may swap between mobile (position:
+      // absolute, this rule) and desktop (in-flow, no `bottom`), so
+      // the snapshot stays consistent with the active CSS.
+      const pitch = document.querySelector<HTMLElement>(".m-hero__pitch");
+      if (pitch) {
+        const pitchStyle = getComputedStyle(pitch);
+        if (pitchStyle.position === "absolute") {
+          const pitchBottomPx = parseFloat(pitchStyle.bottom);
+          if (isFinite(pitchBottomPx)) {
+            pitch.style.bottom = `${pitchBottomPx}px`;
+          }
+        }
+      }
     };
 
     // Wait for the webfont to settle so offsetWidth/offsetHeight/fontSize
