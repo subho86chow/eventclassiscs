@@ -88,7 +88,7 @@
    * dark ink on light sections, white on dark sections. Children are
    * plain white with `mix-blend-mode: normal` (see the per-child
    * overrides below) so nothing double-blends inside the group. */
-  color: #ffffff;
+  color: var(--paper);
   mix-blend-mode: difference;
 
   /* Fully transparent — no background, no blur, no border. Content
@@ -119,7 +119,7 @@
    * children are plain white with normal blending so the band inverts
    * as one group instead of per-glyph. Explicit color: #fff keeps this
    * independent of the :where() invert rule from globals.css. */
-  color: #ffffff;
+  color: var(--paper);
   mix-blend-mode: normal;
   text-decoration: none;
   font-weight: 400;
@@ -364,7 +364,7 @@
   inset: 0;
   z-index: 300;
 
-  color: #ffffff;
+  color: var(--paper);
   mix-blend-mode: difference;
 
   pointer-events: none;
@@ -515,7 +515,22 @@
    * used to avoid). Inside the static full-viewport blend group, the
    * transform is safe: the group inverts the glyphs against the page
    * backdrop on every frame while GSAP moves this child freely. */
-  color: #ffffff;
+  color: var(--paper);
+  mix-blend-mode: normal;
+}
+
+/* Keep the React Bits component untouched; this only removes the browser's
+ * default paragraph spacing and preserves the wordmark's existing layout. */
+.m-hero__wordmark-load {
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+  color: inherit;
+  mix-blend-mode: normal;
+}
+
+.m-hero__wordmark-load > span {
+  color: inherit;
   mix-blend-mode: normal;
 }
 

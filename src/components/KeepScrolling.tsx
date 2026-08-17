@@ -16,17 +16,23 @@ gsap.ticker.lagSmoothing(500, 33);
  *
  * Pinned near-black stage. A uniform grid of capsule outlines frames a
  * pill-sized "stadium" that reads as one more grid pill — distinguished
- * only by the `KEEP SCROLLING • ` text marching around its perimeter
- * (textPath + SMIL startOffset — it keeps marching through the whole
- * sequence). While scrolling, the grid columns drift vertically in
+ * only by the `KEEP SCROLLING • ` text marching around its perimeter.
+ * Each glyph is positioned on the closed path with modulo arithmetic, so
+ * the march has no browser-dependent textPath seam. While scrolling, the
+ * grid columns drift vertically in
  * alternating directions (even up, odd down; the centre column stays
  * fixed), then a GSAP timeline scrubs: the grid fades, the stadium floods
- * white, and a whiteout veil lands the stage on pure white exactly as the
- * pin releases — a clean handoff into Success Stories.
+ * white, and a whiteout veil lands the stage on pure white before a short
+ * crossfade reveals Success Stories underneath.
  */
 
-const REPEAT = "KEEP SCROLLING • "; // "•"
-const SCROLL_TEXT = REPEAT.repeat(10);
+/* Non-breaking gaps keep the separator at both ends of the spacing-fitted
+ * run; a trailing regular space may be collapsed by SVG text layout. */
+const REPEAT = "KEEP SCROLLING\u00A0•\u00A0";
+const TEXT_REPETITIONS = 3;
+const SCROLL_TEXT = REPEAT.repeat(TEXT_REPETITIONS);
+const SCROLL_GLYPHS = Array.from(SCROLL_TEXT);
+const MARCH_CIRCUIT_SECONDS = 22;
 
 /* Stadium geometry — identical to a grid pill (100 × 200, corner radius
  * 50). Centred at (600, 400) so it sits cleanly in row 2 of the grid and
@@ -46,10 +52,12 @@ const STADIUM_BOUNDS = {
   h: 200,
 };
 
-/* Final zoom factor. Puts the text columns at ~15% / ~85% of the viewBox
- * width while the white stadium body covers everything but the far edges —
- * the whiteout layer finishes the job. */
-const ZOOM_FINAL = 7;
+/* The sliced SVG is much narrower on phones. A desktop-scale 7× zoom sends
+ * every perimeter glyph beyond the mobile crop well before the animation
+ * finishes, leaving an apparently blank tail. Keep the mobile zoom tighter
+ * so the lettering remains visible until the whiteout takes over. */
+const DESKTOP_ZOOM_FINAL = 7;
+const MOBILE_ZOOM_FINAL = 2.75;
 
 /* ---------- Capsule grid ----------
  * Uniform grid: every pill is the same size, horizontal gap = vertical
@@ -99,79 +107,128 @@ for (let col = 0; col < COL_COUNT; col++) {
 
 export function KeepScrolling() {
   const sectionRef = useRef<HTMLElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
+  const pathRef = useRef<SVGPathElement>(null);
+  const probeRef = useRef<SVGTextElement>(null);
+  const glyphRefs = useRef<(SVGTextElement | null)[]>([]);
 
   useEffect(() => {
     const section = sectionRef.current;
-    const svg = svgRef.current;
-    if (!section || !svg) return;
+    const path = pathRef.current;
+    const probe = probeRef.current;
+    if (!section || !path || !probe) return;
 
-    /* Align the SMIL march loop to ONE repetition of the text instead of
-     * one full path length. The −100% shift (one stadium perimeter ≈ 514
-     * user units) is NOT an integer multiple of the repetition advance
-     * (≈ 164 units), so the loop wrap lands mid-phrase and the pill
-     * visibly snaps / overruns at the seam. Shifting by exactly the
-     * measured repetition width keeps every wrap pixel-identical because
-     * the string is periodic with that period. */
-    const path = section.querySelector<SVGPathElement>("#keep-scrolling-stadium");
-    const march = section.querySelector<SVGAnimateElement>("[data-ks-march]");
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const perimeter = path.getTotalLength();
+    let glyphCentres: number[] = [];
+    let phase = 0;
+    let frameId: number | null = null;
+    let previousTime = 0;
+    let isInView = false;
+    let layoutReady = false;
+    let disposed = false;
 
-    const alignMarchToRepetition = () => {
-      if (!path || !march) return;
-      const pathLen = path.getTotalLength();
+    /* Lay each glyph out independently and wrap its distance with modulo.
+     * Unlike textPath startOffset, this never creates text before/after a
+     * path endpoint: the closed path genuinely has no first or last glyph. */
+    const positionGlyphs = () => {
+      if (!layoutReady) return;
 
-      /* Measure the real laid-out advance of ONE "KEEP SCROLLING • " —
-       * plain <text> (no textPath) so getComputedTextLength returns the
-       * horizontal advance in user units for the loaded Archivo face. */
-      const probe = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      probe.setAttribute("class", "keep-scrolling__text");
-      probe.setAttribute("x", "-100000");
-      probe.setAttribute("y", "-100000");
-      probe.textContent = REPEAT;
-      svg.appendChild(probe);
-      const repWidth = probe.getComputedTextLength();
-      svg.removeChild(probe);
+      glyphRefs.current.forEach((glyph, index) => {
+        if (!glyph) return;
 
-      if (!(repWidth > 0)) return;
+        const distance = (glyphCentres[index] + phase) % perimeter;
+        const before = path.getPointAtLength((distance - 0.35 + perimeter) % perimeter);
+        const point = path.getPointAtLength(distance);
+        const after = path.getPointAtLength((distance + 0.35) % perimeter);
+        const angle = Math.atan2(after.y - before.y, after.x - before.x) * (180 / Math.PI);
 
-      /* Shift by exactly one repetition per cycle. */
-      march.setAttribute("to", `${(-(repWidth / pathLen) * 100).toFixed(4)}%`);
-      /* Keep the original march *speed* (one loop ≈ 22 s): the new cycle
-       * covers repWidth instead of pathLen, so scale the duration. */
-      march.setAttribute("dur", `${(22 * (repWidth / pathLen)).toFixed(3)}s`);
+        glyph.setAttribute(
+          "transform",
+          `translate(${point.x.toFixed(3)} ${point.y.toFixed(3)}) rotate(${angle.toFixed(3)}) translate(0 -15)`,
+        );
+        glyph.setAttribute("opacity", "1");
+      });
     };
 
-    /* Fonts must be loaded before measuring, else the probe lays out in
-     * the fallback face. document.fonts.ready resolves once every pending
-     * webfont finished; in the reduced-motion path we still apply the
-     * alignment so the static frame is seamless too. */
-    const measureOnFontsReady = () => {
-      if (typeof document !== "undefined" && document.fonts?.ready) {
-        document.fonts.ready.then(alignMarchToRepetition).catch(alignMarchToRepetition);
-      } else {
-        alignMarchToRepetition();
+    const stopMarch = () => {
+      if (frameId !== null) cancelAnimationFrame(frameId);
+      frameId = null;
+      previousTime = 0;
+    };
+
+    const tick = (time: number) => {
+      frameId = null;
+      if (disposed || reducedMotion || !isInView || !layoutReady) return;
+
+      if (previousTime > 0) {
+        /* Cap long gaps after tab switches so the copy never jumps. */
+        const deltaSeconds = Math.min((time - previousTime) / 1000, 0.05);
+        phase = (phase + (perimeter * deltaSeconds) / MARCH_CIRCUIT_SECONDS) % perimeter;
+        positionGlyphs();
       }
+      previousTime = time;
+      frameId = requestAnimationFrame(tick);
     };
-    measureOnFontsReady();
 
-    /* Reduced motion: freeze the SMIL text march, skip the pin/drift —
+    const startMarch = () => {
+      if (frameId !== null || !layoutReady || !isInView || reducedMotion) return;
+      previousTime = 0;
+      frameId = requestAnimationFrame(tick);
+    };
+
+    const measureGlyphs = () => {
+      if (disposed) return;
+
+      const cumulative = [0];
+      try {
+        for (let index = 1; index <= SCROLL_GLYPHS.length; index += 1) {
+          cumulative.push(probe.getSubStringLength(0, index));
+        }
+      } catch {
+        /* Extremely old SVG engines: equal spacing still preserves the
+         * seamless loop, only the kerning becomes less typographic. */
+        cumulative.length = 1;
+        for (let index = 1; index <= SCROLL_GLYPHS.length; index += 1) {
+          cumulative.push(index);
+        }
+      }
+
+      const naturalLength = cumulative.at(-1) ?? 0;
+      if (!(naturalLength > 0)) return;
+
+      const scale = perimeter / naturalLength;
+      glyphCentres = SCROLL_GLYPHS.map(
+        (_, index) => ((cumulative[index] + cumulative[index + 1]) * 0.5) * scale,
+      );
+      layoutReady = true;
+      positionGlyphs();
+      startMarch();
+    };
+
+    const fontsReady = document.fonts?.ready;
+    if (fontsReady) {
+      fontsReady.then(measureGlyphs, measureGlyphs);
+    } else {
+      measureGlyphs();
+    }
+
+    /* Reduced motion: keep the measured static frame and skip pin/drift —
      * the section renders as its static initial frame. */
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      svg.pauseAnimations();
-      return;
+    if (reducedMotion) {
+      return () => {
+        disposed = true;
+        stopMarch();
+      };
     }
 
     gsap.registerPlugin(ScrollTrigger);
 
-    /* Pause the SMIL text march while the section is off-screen. The 22 s
-     * startOffset animation runs on the document timeline continuously —
-     * main-thread SVG animation on mobile Safari — even when the pinned
-     * stage is far from the viewport. The march resumes the moment the
-     * section approaches. */
+    /* The glyph loop only runs while the section is near the viewport. */
     const io = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) svg.unpauseAnimations();
-        else svg.pauseAnimations();
+        isInView = entry.isIntersecting;
+        if (isInView) startMarch();
+        else stopMarch();
       },
       { rootMargin: "150px 0px" },
     );
@@ -195,16 +252,25 @@ export function KeepScrolling() {
       const buildStage = ({
         pinEnd,
         zoomStart,
+        zoomScale,
         whiteoutStart,
         whiteoutDuration,
+        handoffDuration,
         driftEnd,
       }: {
         pinEnd: string;
         zoomStart: number;
+        zoomScale: number;
         whiteoutStart: number;
         whiteoutDuration: number;
+        handoffDuration: number;
         driftEnd: string;
       }) => {
+        const setStageLayer = (raised: boolean) => {
+          if (raised) section.style.setProperty("z-index", "1");
+          else section.style.removeProperty("z-index");
+        };
+
         const tl = gsap.timeline({
           defaults: { ease: "none", force3D: true },
           scrollTrigger: {
@@ -223,6 +289,11 @@ export function KeepScrolling() {
             /* Pre-pin the layout by 1 px on fast scroll so the pin doesn't
              * visibly snap on trackpad flicks. */
             anticipatePin: 1,
+            onEnter: () => setStageLayer(true),
+            onEnterBack: () => setStageLayer(true),
+            onLeave: () => setStageLayer(false),
+            onLeaveBack: () => setStageLayer(false),
+            onRefresh: (self) => setStageLayer(self.isActive),
           },
         });
 
@@ -234,7 +305,7 @@ export function KeepScrolling() {
           .to(grid, { opacity: 0, duration: 0.18, force3D: true }, 0.05)
           .to(fill, { fillOpacity: 1, duration: 0.15, force3D: true }, 0.07)
           .to(stroke, { opacity: 0, duration: 0.12, force3D: true }, 0.09)
-          .to(text, { fill: "#8a8a8a", duration: 0.15, force3D: true }, 0.07)
+          .to(text, { fill: "#8a8a8a", duration: 0.15, force3D: false }, 0.07)
           /* Phase 2 — zoom from the stadium centre; the perimeter text
            * becomes the giant left/right columns. On mobile the zoom is
            * parked LATER (0.4 → 0.8 instead of 0.32 → 0.72): the zoomed
@@ -246,7 +317,7 @@ export function KeepScrolling() {
           .to(
             zoom,
             {
-              scale: ZOOM_FINAL,
+              scale: zoomScale,
               svgOrigin: `${STADIUM_CX} ${STADIUM_CY}`,
               duration: 0.4,
               ease: "power2.inOut",
@@ -259,10 +330,23 @@ export function KeepScrolling() {
            * releases the section exits on pure white and the transition is
            * seamless. Starts just before the zoom completes so the stadium
            * and the surrounding grid merge into one continuous white.
-           * Mobile: 0.82 → 0.98 (desktop: 0.8 → 1.0), so the veil lands
-           * exactly as the pin releases and the white tail ends with the
-           * section. */
-          .to(whiteout, { opacity: 1, duration: whiteoutDuration, force3D: true }, whiteoutStart);
+           * Mobile: 0.82 → 0.98 (desktop: 0.8 → 1.0), so the artwork is
+           * completely white before the separate handoff tween begins. */
+          .to(whiteout, { opacity: 1, duration: whiteoutDuration, force3D: true }, whiteoutStart)
+          /* The artwork is fully finished before this starts. Success Stories
+           * is already moving upward beneath the white stage; fading the
+           * outgoing stage over the final scroll window blends the sections
+           * instead of exposing the next section in a one-frame cut. */
+          .to(
+            section,
+            {
+              autoAlpha: 0,
+              duration: handoffDuration,
+              ease: "none",
+              force3D: false,
+            },
+            1,
+          );
 
         /* Column drift — its own trigger so it also runs while the section
          * scrolls into view, not just while pinned.
@@ -289,28 +373,47 @@ export function KeepScrolling() {
         });
       };
 
-      /* Mobile: shorter pinned span + later zoom + later whiteout (see the
-       * Phase 2 comment). Desktop: the original timing. */
+      /* The handoff distances are added after the original animation, so
+       * none of its beats are compressed: mobile keeps its full 200dvh and
+       * then blends for 16dvh; desktop keeps 300dvh and blends for 15dvh. */
       mm.add("(max-width: 768px)", () => {
-        buildStage({ pinEnd: "+=200%", zoomStart: 0.4, whiteoutStart: 0.82, whiteoutDuration: 0.16, driftEnd: "+=300%" });
+        buildStage({
+          pinEnd: "+=216%",
+          zoomStart: 0.4,
+          zoomScale: MOBILE_ZOOM_FINAL,
+          whiteoutStart: 0.82,
+          whiteoutDuration: 0.16,
+          handoffDuration: 0.08,
+          driftEnd: "+=300%",
+        });
       });
 
       mm.add("(min-width: 769px)", () => {
-        buildStage({ pinEnd: "+=300%", zoomStart: 0.32, whiteoutStart: 0.8, whiteoutDuration: 0.2, driftEnd: "+=400%" });
+        buildStage({
+          pinEnd: "+=315%",
+          zoomStart: 0.32,
+          zoomScale: DESKTOP_ZOOM_FINAL,
+          whiteoutStart: 0.8,
+          whiteoutDuration: 0.2,
+          handoffDuration: 0.05,
+          driftEnd: "+=400%",
+        });
       });
     }, section);
 
     return () => {
+      disposed = true;
+      stopMarch();
       io.disconnect();
       mm?.revert();
       ctx.revert();
+      section.style.removeProperty("z-index");
     };
   }, []);
 
   return (
     <section ref={sectionRef} className="keep-scrolling" aria-label="Keep scrolling">
       <svg
-        ref={svgRef}
         className="keep-scrolling__art"
         viewBox="0 0 1200 800"
         preserveAspectRatio="xMidYMid slice"
@@ -343,7 +446,7 @@ export function KeepScrolling() {
 
         {/* ---------- Stadium + marching text ---------- */}
         <defs>
-          <path id="keep-scrolling-stadium" d={STADIUM_PATH} />
+          <path ref={pathRef} id="keep-scrolling-stadium" d={STADIUM_PATH} />
         </defs>
 
         <g className="keep-scrolling__zoom" data-ks-zoom>
@@ -360,32 +463,36 @@ export function KeepScrolling() {
             fill="none"
           />
 
-          {/* dy seats the glyphs *inside* the stadium outline: textPath
-            * parks them outside a clockwise path by default, so we pull
-            * them across the stroke by ~0.9em. (`side="right"` would be
-            * the clean way, but Chrome still doesn't render it.) */}
-          <text className="keep-scrolling__text" data-ks-text dy="-15">
-            <textPath href="#keep-scrolling-stadium" startOffset="0%">
-              {SCROLL_TEXT}
-              {/* March the text around the stadium loop indefinitely.
-                * JS re-targets this cycle to shift by exactly ONE
-                * "KEEP SCROLLING • " repetition (the string's period) at
-                * runtime — a −100%-of-path cycle would land mid-phrase
-                * and snap at the seam, because the perimeter is not an
-                * integer multiple of the repetition width. Untouched by
-                * GSAP — it keeps marching through the flood and the
-                * whiteout. */}
-              <animate
-                data-ks-march
-                attributeName="startOffset"
-                from="0%"
-                to="-100%"
-                dur="22s"
-                repeatCount="indefinite"
-              />
-            </textPath>
-          </text>
+          {/* Every character owns a wrapped distance on the closed path.
+            * There are no duplicated runs or textPath endpoints to collide. */}
+          <g className="keep-scrolling__text" data-ks-text>
+            {SCROLL_GLYPHS.map((glyph, index) => (
+              <text
+                key={`${glyph}-${index}`}
+                ref={(node) => {
+                  glyphRefs.current[index] = node;
+                }}
+                className="keep-scrolling__glyph"
+                textAnchor="middle"
+                opacity="0"
+              >
+                {glyph}
+              </text>
+            ))}
+          </g>
         </g>
+
+        {/* Horizontal, invisible copy used once to read Archivo's real
+          * glyph advances before distributing them around the perimeter. */}
+        <text
+          ref={probeRef}
+          className="keep-scrolling__text keep-scrolling__probe"
+          x="-10000"
+          y="-10000"
+          aria-hidden="true"
+        >
+          {SCROLL_TEXT}
+        </text>
       </svg>
 
       {/* Whiteout veil — *above* the SVG (DOM order) so it covers the

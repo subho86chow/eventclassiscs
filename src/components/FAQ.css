@@ -1,5 +1,5 @@
 /* Hallmark · FAQ section.
- * Two-column white-bg layout: photo + CTA card on the left, big headline
+ * Two-column light layout: photo + CTA card on the left, big headline
  * + accordion on the right. GSAP animates the accordion expand/collapse
  * with a smooth height + opacity tween.
  *
@@ -10,6 +10,7 @@
 .faq {
   position: relative;
   background: var(--paper);
+  color: var(--ink);
 
   width: 100%;
   padding-block: clamp(6rem, 12vw, 12rem);
@@ -70,6 +71,8 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.16em;
+  color: var(--ink);
+  mix-blend-mode: normal;
 }
 
 .faq__photo {
@@ -93,6 +96,8 @@
   font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
+  color: var(--paper);
+  mix-blend-mode: normal;
 }
 
 .faq__cta {
@@ -109,32 +114,15 @@
   font-size: clamp(1rem, 1.4vw, 1.25rem);
   line-height: 1.4;
   letter-spacing: -0.005em;
+  color: var(--ink);
+  mix-blend-mode: normal;
 }
 
-.faq__cta-button {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2xs);
-
+.faq .faq__cta-button {
+  position: relative;
+  inset: auto;
+  z-index: 0;
   align-self: flex-start;
-
-  padding: 0.625rem 1rem;
-  border: 1px solid color-mix(in oklch, var(--ink) 50%, transparent);
-  border-radius: 2px;
-  background: transparent;
-  font-family: var(--font-sans);
-  font-weight: 500;
-  font-size: 0.875rem;
-  letter-spacing: -0.005em;
-  text-decoration: none;
-  transition:
-    background-color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
-}
-
-.faq__cta-button:hover {
-  background: color-mix(in oklch, var(--ink) 8%, transparent);
-  border-color: color-mix(in oklch, var(--paper) 80%, transparent);
 }
 
 /* ───────── Col 2 — headline + accordion ───────── */
@@ -153,6 +141,8 @@
   line-height: 1.05;
   letter-spacing: -0.03em;
   max-width: 22ch;
+  color: var(--ink);
+  mix-blend-mode: normal;
 }
 
 .faq__list {
@@ -164,11 +154,13 @@
 }
 
 .faq__item {
-  border-top: 1px solid color-mix(in oklch, var(--ink) 14%, transparent);
+  border-top: 1px solid color-mix(in oklch, var(--ink) 18%, transparent);
+  color: var(--ink);
+  mix-blend-mode: normal;
 }
 
 .faq__item:last-child {
-  border-bottom: 1px solid color-mix(in oklch, var(--ink) 14%, transparent);
+  border-bottom: 1px solid color-mix(in oklch, var(--ink) 18%, transparent);
 }
 
 .faq__question {
@@ -188,6 +180,8 @@
   line-height: 1.45;
   text-align: left;
   cursor: pointer;
+  color: var(--ink);
+  mix-blend-mode: normal;
 
   transition: color var(--dur-fast) var(--ease-out);
 }
@@ -199,12 +193,14 @@
 
 .faq__question:focus-visible {
   text-decoration: underline;
-  text-decoration-color: color-mix(in oklch, var(--paper) 60%, transparent);
+  text-decoration-color: color-mix(in oklch, var(--ink) 60%, transparent);
   text-underline-offset: 0.25em;
 }
 
 .faq__question-text {
   flex: 1;
+  color: inherit;
+  mix-blend-mode: normal;
 }
 
 /* Toggle indicator — small hollow circle that rotates 45° when the item
@@ -291,6 +287,16 @@
   line-height: 1.55;
   letter-spacing: -0.005em;
   max-width: 56ch;
+  color: var(--ink);
+  mix-blend-mode: normal;
+}
+
+/* Override the global white/difference typography rule for the accordion. */
+.faq .faq__question,
+.faq .faq__question-text,
+.faq .faq__answer-text {
+  color: var(--ink) !important;
+  mix-blend-mode: normal !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

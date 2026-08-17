@@ -1,4 +1,4 @@
-import { RotatingLogo } from "./RotatingLogo";
+import { MagneticButton } from "@/components/ui/magnetic-button";
 import "./Footer.css";
 
 /**
@@ -7,7 +7,7 @@ import "./Footer.css";
  * Two-region layout on a dark canvas:
  *   left column  · large editorial nav list (About, Work, Process,
  *                 Services, Resources, Contact) with hairline dividers.
- *   right column · 3D rotating logo on top, then "(STUDIO DETAILS)" and
+ *   right column · looping logo video on top, then "(STUDIO DETAILS)" and
  *                 "(SOCIALS)" stacked side-by-side on desktop and
  *                 collapsing to a single column on mobile.
  */
@@ -29,15 +29,10 @@ const SOCIAL_ITEMS: ReadonlyArray<{ label: string; href: string }> = [
 
 export function Footer() {
   return (
-    <footer className="footer">
+    <footer className="footer" id="contact">
       <div className="footer__inner">
         {/* ───── Nav (left column) ───── */}
         <nav className="footer__nav-col" aria-label="Site navigation">
-          <header className="footer__nav-header">
-            <span className="footer__dot" aria-hidden="true" />
-            <span className="footer__nav-label">Navigation</span>
-          </header>
-
           <ul className="footer__nav-list">
             {NAV_ITEMS.map((item) => (
               <li key={item.label} className="footer__nav-item">
@@ -47,13 +42,52 @@ export function Footer() {
               </li>
             ))}
           </ul>
+
+          <a
+            className="footer__magnetic-zone"
+            href="mailto:hello@eventclassics.com"
+          >
+            <span className="footer__talk-link">
+              Let&apos;s Talk <span aria-hidden="true">→</span>
+            </span>
+
+            <MagneticButton>
+              <span
+                className="m-hero__cta footer__contact-button"
+              >
+                <span>View Contact</span>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="7" y1="17" x2="17" y2="7" />
+                  <polyline points="7 7 17 7 17 17" />
+                </svg>
+              </span>
+            </MagneticButton>
+          </a>
         </nav>
 
-        {/* ───── Right column: 3D on top, Details + Socials below ───── */}
+        {/* ───── Right column: logo on top, Details + Socials below ───── */}
         <div className="footer__right-col">
-          {/* 3D object */}
-          <div className="footer__threed-wrap" aria-hidden="true">
-            <RotatingLogo />
+          <div className="footer__logo-wrap" aria-hidden="true">
+            <video
+              className="footer__logo-video"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+            >
+              <source src="/videos/ec-logo-glass.mp4" type="video/mp4" />
+            </video>
           </div>
 
           {/* Studio details + Socials side by side */}

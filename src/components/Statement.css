@@ -20,8 +20,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
   grid-template-areas:
-    "pager  pager"
-    "left   right"
+    "left-column right"
     ".      byline";
   row-gap: clamp(2rem, 5vw, 4rem);
   column-gap: clamp(2rem, 5vw, 5rem);
@@ -32,17 +31,22 @@
   .statement__inner {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "pager"
-      "left"
+      "left-column"
       "right"
       "byline";
   }
 }
 
+.statement__left-column {
+  grid-area: left-column;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+}
+
 /* ---------- Pager (top-left) ---------- */
 
 .statement__pager {
-  grid-area: pager;
   display: flex;
   align-items: center;
   gap: clamp(0.75rem, 2vw, 1.25rem);
@@ -87,7 +91,6 @@
 /* ---------- Stat block (left column) ---------- */
 
 .statement__left {
-  grid-area: left;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
@@ -99,7 +102,7 @@
   font-size: clamp(4rem, 8vw, 7.5rem);
   line-height: 1;
   letter-spacing: -0.04em;
-  /* Colour + invert inherited from globals.css. */
+  color: var(--paper);
 }
 
 .statement__caption {
@@ -125,7 +128,7 @@
 .statement__copy {
   font-family: var(--font-sans);
   font-weight: 600;
-  font-size: clamp(1.5rem, 3.6vw, 3.5rem);
+  font-size: clamp(1.4rem, 2.8vw, 2.75rem);
   line-height: 1.1;
   letter-spacing: -0.025em;
   /* Colour + invert inherited from globals.css. */
@@ -133,14 +136,27 @@
   max-width: 22ch;
 }
 
-/* Each character is its own span so GSAP can scrub opacity per letter.
- * display: inline-block keeps each glyph in the inline flow while giving
- * it its own animation target. The dim default matches the stagger
- * starting value so the pre-hydration state matches the first frame of the
- * scrub. */
+/* Each character remains an inline span so GSAP can scrub opacity without
+ * introducing a line-break opportunity between every pair of letters. */
 .statement__letter {
-  display: inline-block;
+  display: inline;
   opacity: 0.1;
+}
+
+@media (max-width: 768px) {
+  .statement__right {
+    width: 100%;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .statement__copy {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+    font-size: clamp(1.375rem, 6vw, 1.5rem);
+    line-height: 1.15;
+  }
 }
 
 /* Reduced-motion: no scroll-driven reveal — letters stay fully legible

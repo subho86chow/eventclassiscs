@@ -64,31 +64,28 @@
 }
 
 :root {
-  /* Light paper · black ink · near-monochrome (chroma ≥ 0.005 across
-   * every neutral to clear Hallmark gate 22).
-   * Anchor hue 240 — a faint cool tint, just enough to break the
-   * "pure flat grey" tell.
-   */
-  --paper:        oklch(99% 0.005 240);
-  --paper-edge:   oklch(94% 0.005 240);
-  --paper-elev:   oklch(96% 0.005 240);
-  --ink:          oklch(15% 0.005 240);
+  /* Match the two visual sources exactly: the hero shader's white and
+   * the decoded background of the footer logo video. */
+  --paper:        #ffffff;
+  --paper-edge:   var(--paper);
+  --paper-elev:   var(--paper);
+  --ink:          #000000;
   --ink-dim:      oklch(38% 0.005 240);
 
   /* shadcn mirrors — kept so future shadcn primitives render correctly. */
   --background: var(--paper);
   --foreground: var(--ink);
-  --card: oklch(99% 0.005 240);
+  --card: var(--paper);
   --card-foreground: var(--ink);
-  --popover: oklch(99% 0.005 240);
+  --popover: var(--paper);
   --popover-foreground: var(--ink);
   --primary: var(--ink);
   --primary-foreground: var(--paper);
-  --secondary: oklch(96% 0.005 240);
+  --secondary: var(--paper);
   --secondary-foreground: var(--ink);
-  --muted: oklch(96% 0.005 240);
+  --muted: var(--paper);
   --muted-foreground: var(--ink-dim);
-  --accent: oklch(94% 0.005 240);
+  --accent: var(--paper);
   --accent-foreground: var(--ink);
   --destructive: oklch(58% 0.20 25);
   --border: oklch(88% 0.005 240);
@@ -100,11 +97,11 @@
   --chart-4: oklch(0.371 0.005 240);
   --chart-5: oklch(0.269 0.005 240);
   --radius: 0.625rem;
-  --sidebar: oklch(99% 0.005 240);
+  --sidebar: var(--paper);
   --sidebar-foreground: var(--ink);
-  --sidebar-primary: oklch(96% 0.005 240);
+  --sidebar-primary: var(--paper);
   --sidebar-primary-foreground: var(--ink);
-  --sidebar-accent: oklch(96% 0.005 240);
+  --sidebar-accent: var(--paper);
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: oklch(88% 0.005 240);
   --sidebar-ring: oklch(38% 0.005 240);
@@ -188,7 +185,7 @@
     figcaption, blockquote,
     svg
   ) {
-    color: #ffffff;
+    color: var(--paper);
     mix-blend-mode: difference;
   }
   html {

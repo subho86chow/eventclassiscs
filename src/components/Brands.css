@@ -15,25 +15,23 @@
   padding-block: clamp(4rem, 8vw, 8rem);
 }
 
-.brands__top {
-  /* Header label container — sticks to the left, no 30 vw offset. */
+.brands__layout {
   max-width: 90rem; /* ~1440px */
   margin-inline: auto;
   padding-inline: clamp(var(--space-md), 5vw, var(--space-2xl));
+
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 7fr);
+  align-items: start;
 }
 
-.brands__inner {
-  max-width: 90rem; /* ~1440px */
-  margin-inline: auto;
-  padding-inline: clamp(var(--space-md), 5vw, var(--space-2xl));
-}
+@media (max-width: 767px) {
+  .brands__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
-/* Desktop + tablet: rows get pushed 30 vw from the left so the section
- * reads as right-anchored editorial chrome. Header label (in .brands__top)
- * stays at the left edge. Mobile stays edge-to-edge. */
-@media (min-width: 768px) {
-  .brands__inner {
-    padding-left: 30vw;
+  .brands__header {
+    padding-block: var(--space-md) var(--space-sm);
   }
 }
 
@@ -44,7 +42,11 @@
   align-items: center;
   gap: var(--space-sm);
 
-  padding-block: var(--space-md) var(--space-sm);
+  padding-block: clamp(2.5rem, 6vw, 5rem);
+}
+
+.brands__rows {
+  min-width: 0;
 }
 
 .brands__dot {

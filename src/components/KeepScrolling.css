@@ -4,8 +4,8 @@
  * "KEEP SCROLLING • " text. On scroll (GSAP ScrollTrigger, see
  * KeepScrolling.tsx): grid columns drift vertically in alternating
  * directions (centre column fixed), the grid fades, the stadium floods
- * white, and a whiteout veil lands the stage on pure white as the pin
- * releases.
+ * white, and a whiteout veil lands the stage on pure white before the
+ * short crossfade into Success Stories.
  */
 
 .keep-scrolling {
@@ -25,7 +25,7 @@
 
 /* Whiteout veil — *above* the SVG in paint order (it comes last in the
  * DOM), so it covers the marching text and stadium too as it fades in,
- * landing the stage on pure white exactly when the pin releases. */
+ * landing the stage on pure white before the handoff begins. */
 .keep-scrolling__whiteout {
   position: absolute;
   inset: 0;
@@ -71,8 +71,21 @@
   font-weight: 500;
   font-size: 16px;
   letter-spacing: 0.04em;
-  fill: color-mix(in oklch, var(--paper) 90%, transparent);
+  /* Keep this explicit and opaque: GSAP's colour interpolation treats an
+   * oklch color-mix with transparency as transparent black at the start of
+   * the scroll tween, which makes the lettering briefly disappear. */
+  fill: var(--paper);
 }
 
-/* Reduced motion: JS skips the ScrollTrigger setup and pauses the SMIL
- * march, leaving the static initial frame. */
+/* Spacing is already encoded in each glyph's measured path position. */
+.keep-scrolling__glyph {
+  letter-spacing: 0;
+}
+
+.keep-scrolling__probe {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Reduced motion: JS skips the ScrollTrigger and glyph-march setup,
+ * leaving the measured static initial frame. */

@@ -9,17 +9,9 @@ import "./Brands.css";
  * `src/components/brand-logos/` and swap the wordmark string for an
  * `<Image>` / inline `<svg>` when you have them.
  *
- * Layout (top → bottom):
- *   1. Header label        — sticks to the left edge (no offset)
- *   2. Hairline rule       — full section width
- *   3. Row 1               — offset 30 vw from left on desktop+tablet
- *   4. Hairline rule       — full section width
- *   5. Row 2               — offset 30 vw from left on desktop+tablet
- *   6. Hairline rule       — full section width
- *
- * The 30 vw offset on the rows gives the section an editorial,
- * right-anchored feel; the header label stays flush left so it reads as
- * a label for what follows.
+ * Desktop uses a 30/70 editorial split: the section label occupies the
+ * left column while both logo rows occupy the right column. Their outer
+ * top edges share one grid row; mobile stacks the label above the logos.
  */
 
 interface BrandSlot {
@@ -65,39 +57,30 @@ function BrandCell({ slot }: { slot: BrandSlot }) {
 export function Brands() {
   return (
     <section className="brands" id="work">
-      {/* Header label — sticks to the left, no offset, no hairline
-       * directly below it (the hairlines belong to the rows div, not the
-       * label div). */}
-      <div className="brands__top">
+      <div className="brands__layout">
         <header className="brands__header">
           <span className="brands__dot" aria-hidden="true" />
-          <span className="brands__label">Brands we've helped</span>
+          <span className="brands__label">Brands we&apos;ve helped</span>
         </header>
-      </div>
 
-      {/* Row 1 — offset 30 vw from left on desktop+tablet */}
-      <div className="brands__inner">
-        <div className="brands__row" role="list">
-          {ROW_1.map((slot) => (
-            <BrandCell key={slot.name} slot={slot} />
-          ))}
+        <div className="brands__rows">
+          <div className="brands__row" role="list">
+            {ROW_1.map((slot) => (
+              <BrandCell key={slot.name} slot={slot} />
+            ))}
+          </div>
+
+          <hr className="brands__rule" />
+
+          <div className="brands__row" role="list">
+            {ROW_2.map((slot) => (
+              <BrandCell key={slot.name} slot={slot} />
+            ))}
+          </div>
+
+          <hr className="brands__rule" />
         </div>
       </div>
-
-      {/* Full-width hairline (boundary of the rows div, between rows) */}
-      <hr className="brands__rule" />
-
-      {/* Row 2 — offset 30 vw from left on desktop+tablet */}
-      <div className="brands__inner">
-        <div className="brands__row" role="list">
-          {ROW_2.map((slot) => (
-            <BrandCell key={slot.name} slot={slot} />
-          ))}
-        </div>
-      </div>
-
-      {/* Full-width hairline (boundary of the rows div, at bottom) */}
-      <hr className="brands__rule" />
     </section>
   );
 }

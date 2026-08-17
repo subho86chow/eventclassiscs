@@ -5,89 +5,99 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   Environment,
   Lightformer,
+  MeshTransmissionMaterial,
   useGLTF,
 } from "@react-three/drei";
 import * as THREE from "three";
 import "./RotatingLogo.css";
 
 /**
- * Hallmark · top-right rotating logo (page chrome).
+ * Footer EC mark rendered as neutral reflective glass.
  *
- * Client component. Loads /logos/3D-EC-Logo.glb, bakes the authored mesh
- * transform into a centred 1.5-unit geometry, and renders it as liquid chrome.
- * A near-mirror MeshPhysicalMaterial supplies the black/white reflection bands
- * while a thin additive Fresnel pass supplies the hero shader's red/cyan colour
- * separation around the contour.
+ * The authored GLB transform is baked into a centred 1.5-unit geometry so the
+ * mark rotates around its visible centre. A high-resolution transmission pass
+ * supplies refraction and volume; a neutral local studio environment supplies
+ * the reflections. There is deliberately no coloured surface shader or
+ * physical iridescence — the body stays clear, smoky and genuinely reflective.
  *
- * The visual translation follows LiquidMetalBg.tsx: its white-on-white palette
- * becomes neutral silver, shiftRed/shiftBlue become the chromatic rim, and its
- * high contour becomes broad bright studio bands over deep black reflections.
- * Local Lightformers provide those bands without an external HDR download.
+ * The HTML footer cannot be sampled by a WebGL transmission material, so a
+ * monochrome studio backdrop is provided only to the material's refraction
+ * pass. The WebGL canvas itself remains transparent over the footer.
  *
- * Mobile perf — the footer logo is the page's biggest GPU/network drain,
- * and it sits BELOW the fold:
- *
- *   • The whole <Canvas> is lazy-mounted. IntersectionObserver with a
- *     1200px approach margin mounts it only when the footer is near —
- *     until then there is no WebGL context at all and, crucially, no
- *     fetch of the ~190 KB /logos/3D-EC-Logo.glb (drei's useGLTF starts the
- *     download on mount). Visitors who never reach the footer pay
- *     nothing; on a slow mobile connection the model has a 1200px head
- *     start to download before it scrolls into view.
- *   • Scroll back out past the margin and the canvas unmounts again —
- *     the r3f render loop (frameloop="always") otherwise redraws the
- *     liquid-metal material EVERY frame, all session, even
- *     while the footer is off-screen. drei caches the parsed GLB in JS
- *     memory, so re-entering the footer re-mounts without re-fetching.
- *
- * Static tilt on X + slow continuous Y rotation; pointer-events:none
- * on the wrapper so it never blocks hero clicks.
+ * The canvas is mounted only while the footer is approaching. This avoids the
+ * GLB download, WebGL context and continuous render loop for visitors who never
+ * reach the footer, while still giving the model a 1200px loading head start.
  */
 
 const MODEL_URL = "/logos/3D-EC-Logo.glb";
 
-const CHROMATIC_RIM_VERTEX = `
-  varying vec3 vViewNormal;
-  varying vec3 vViewPosition;
+/** Neutral high-contrast backdrop sampled only through the glass volume. */
+function createGlassBackdrop() {
+  const width = 512;
+  const height = 512;
+  const pixels = new Uint8Array(width * height * 4);
 
-  void main() {
-    vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
-    vViewNormal = normalize(normalMatrix * normal);
-    vViewPosition = viewPosition.xyz;
-    gl_Position = projectionMatrix * viewPosition;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const u = x / (width - 1);
+      const v = y / (height - 1);
+
+      const broadFill = Math.exp(
+        -(Math.pow(u - 0.48, 2) + Math.pow(v - 0.5, 2)) / 0.34,
+      );
+      const whiteSweep = Math.exp(
+        -Math.pow(u + v * 0.3 - 0.72, 2) / 0.0065,
+      );
+      const softSweep = Math.exp(
+        -Math.pow(u - v * 0.22 - 0.25, 2) / 0.028,
+      );
+      const lowerGlow = Math.exp(
+        -(Math.pow(u - 0.68, 2) + Math.pow(v - 0.82, 2)) / 0.07,
+      );
+
+      const value = Math.min(
+        232,
+        5 + broadFill * 8 + whiteSweep * 148 + softSweep * 18 + lowerGlow * 8,
+      );
+      const index = (y * width + x) * 4;
+
+      // Equal RGB channels keep the refraction completely neutral.
+      pixels[index] = value;
+      pixels[index + 1] = value;
+      pixels[index + 2] = value;
+      pixels[index + 3] = 255;
+    }
   }
-`;
 
-const CHROMATIC_RIM_FRAGMENT = `
-  varying vec3 vViewNormal;
-  varying vec3 vViewPosition;
+  const texture = new THREE.DataTexture(
+    pixels,
+    width,
+    height,
+    THREE.RGBAFormat,
+    THREE.UnsignedByteType,
+  );
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.needsUpdate = true;
+  return texture;
+}
 
-  vec3 spectrum(float t) {
-    return 0.52 + 0.48 * cos(
-      6.2831853 * (t + vec3(0.0, 0.34, 0.67))
-    );
-  }
-
-  void main() {
-    vec3 normal = normalize(vViewNormal);
-    normal = gl_FrontFacing ? normal : -normal;
-
-    vec3 viewDirection = normalize(-vViewPosition);
-    float facing = clamp(abs(dot(normal, viewDirection)), 0.0, 1.0);
-    float rim = smoothstep(0.08, 0.82, pow(1.0 - facing, 3.0));
-
-    float orientation = dot(normal, normalize(vec3(0.66, 0.36, 0.66)));
-    vec3 chroma = spectrum(orientation * 0.34 + vViewPosition.y * 0.08);
-    vec3 colour = chroma * 1.45 + vec3(0.28) * rim;
-
-    gl_FragColor = vec4(colour, rim * 0.72);
-  }
-`;
-
-function LiquidMetalLogo() {
+function ReflectiveGlassLogo() {
   const groupRef = useRef<THREE.Group>(null);
-  const { camera } = useThree();
+  const motionRef = useRef(0);
+  const { camera, gl, size } = useThree();
   const gltf = useGLTF(MODEL_URL);
+  const glassBackdrop = useMemo(() => createGlassBackdrop(), []);
+  const transmissionResolution = Math.min(
+    1536,
+    Math.max(
+      768,
+      Math.ceil(Math.max(size.width, size.height) * gl.getPixelRatio()),
+    ),
+  );
 
   // The GLB contains one mesh with a large authored node transform. Bake that
   // transform into a private geometry before centring/scaling so subsequent
@@ -106,11 +116,7 @@ function LiquidMetalLogo() {
 
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
-
     const maxDim = Math.max(size.x, size.y, size.z) || 1;
-    // 1.5 world units + camera at z=2.6 with FOV 35 → visible height ≈
-    // 1.65 world units, so the wide-and-flat EC mark fits with a hair
-    // of margin instead of clipping the canvas edges.
     const target = 1.5;
     const scale = target / maxDim;
 
@@ -124,8 +130,9 @@ function LiquidMetalLogo() {
   useEffect(() => {
     return () => {
       geometry?.dispose();
+      glassBackdrop.dispose();
     };
-  }, [geometry]);
+  }, [geometry, glassBackdrop]);
 
   useEffect(() => {
     camera.position.set(0, 0.2, 2.6);
@@ -135,7 +142,11 @@ function LiquidMetalLogo() {
 
   useFrame((_, delta) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y += delta * 0.4; // ≈ 23°/s — slow, deliberate
+      motionRef.current += delta;
+      // A slow ±30° turn keeps the thin mark readable while still letting the
+      // environment glide across the glass. A full spin becomes a hairline.
+      groupRef.current.rotation.y =
+        -0.28 + Math.sin(motionRef.current * 0.55) * 0.52;
     }
   });
 
@@ -143,40 +154,40 @@ function LiquidMetalLogo() {
 
   return (
     <group ref={groupRef} rotation={[-0.1, -0.28, 0]}>
-      <mesh geometry={geometry} renderOrder={1}>
-        <meshPhysicalMaterial
-          color="#ffffff"
-          metalness={1}
-          roughness={0.085}
+      <mesh geometry={geometry}>
+        <MeshTransmissionMaterial
+          background={glassBackdrop}
+          backside
+          backsideThickness={0.08}
+          backsideResolution={Math.min(768, transmissionResolution)}
+          backsideEnvMapIntensity={2}
+          resolution={transmissionResolution}
+          samples={6}
+          transmission={1}
+          thickness={0.1}
+          roughness={0.02}
+          ior={1.5}
+          chromaticAberration={0}
+          anisotropicBlur={0}
+          distortion={0}
+          temporalDistortion={0}
+          attenuationColor="#ffffff"
+          attenuationDistance={Infinity}
           clearcoat={1}
-          clearcoatRoughness={0.035}
-          envMapIntensity={3.2}
-          iridescence={0.28}
-          iridescenceIOR={1.18}
-          iridescenceThicknessRange={[110, 260]}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh geometry={geometry} scale={1.008} renderOrder={2}>
-        <shaderMaterial
-          vertexShader={CHROMATIC_RIM_VERTEX}
-          fragmentShader={CHROMATIC_RIM_FRAGMENT}
-          transparent
-          depthWrite={false}
-          depthTest
-          side={THREE.DoubleSide}
-          blending={THREE.AdditiveBlending}
-          toneMapped={false}
+          clearcoatRoughness={0.025}
+          specularIntensity={1}
+          specularColor="#ffffff"
+          envMapIntensity={3}
+          color="#ffffff"
+          metalness={0}
+          side={THREE.FrontSide}
         />
       </mesh>
     </group>
   );
 }
 
-/** Px of scroll room around the viewport in which the footer logo is
- *  considered "approaching". While it's beyond this margin the canvas
- *  stays unmounted — no WebGL context, no GLB fetch, no render loop. */
+/** Px of scroll room around the viewport in which the logo is approaching. */
 const APPROACH_MARGIN_PX = 1200;
 
 export function RotatingLogo() {
@@ -208,64 +219,76 @@ export function RotatingLogo() {
       {near && (
         <Canvas
           camera={{ position: [0, 0.2, 2.6], fov: 35 }}
-          dpr={[1, 1]}
+          dpr={[2, 3]}
           gl={{
             antialias: true,
             alpha: true,
+            premultipliedAlpha: false,
+            precision: "highp",
             powerPreference: "high-performance",
           }}
-          onCreated={({ gl }) => {
-            gl.toneMapping = THREE.ACESFilmicToneMapping;
-            gl.toneMappingExposure = 1.25;
+          onCreated={({ gl: renderer }) => {
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.08;
           }}
         >
-          <ambientLight intensity={0.35} />
-          <directionalLight
-            position={[3, 4, 3]}
-            intensity={2.2}
-            color="#f1fbff"
-          />
-          <pointLight
-            position={[-2.5, -0.5, 2]}
-            intensity={3.5}
-            distance={7}
-            decay={2}
-            color="#ffffff"
-          />
-
           <Suspense fallback={null}>
             <Environment
-              resolution={128}
+              resolution={512}
               frames={1}
               background={false}
-              environmentIntensity={1.6}
+              environmentIntensity={1.1}
             >
               <Lightformer
                 form="rect"
-                color="#ffffff"
-                intensity={8}
-                position={[0.5, 2, 2]}
-                scale={[4.5, 0.55, 1]}
+                color="#bdbdbd"
+                intensity={0.4}
+                position={[0, 0, 4]}
+                scale={[7, 5, 1]}
                 target={[0, 0, 0]}
               />
               <Lightformer
                 form="rect"
                 color="#ffffff"
-                intensity={5}
-                position={[-2, 0, 1.5]}
-                scale={[0.55, 3.5, 1]}
+                intensity={6}
+                position={[0.65, 2.2, 2.4]}
+                scale={[4.8, 0.42, 1]}
+                target={[0, 0, 0]}
+              />
+              <Lightformer
+                form="rect"
+                color="#ffffff"
+                intensity={4.5}
+                position={[-2.2, 0.15, 1.8]}
+                scale={[0.42, 4, 1]}
                 target={[0, 0, 0]}
               />
               <Lightformer
                 form="ring"
                 color="#ffffff"
-                intensity={4}
-                position={[2, -0.4, 1.2]}
+                intensity={2.5}
+                position={[2.2, -0.4, 1.3]}
                 scale={1.8}
                 target={[0, 0, 0]}
               />
+              <Lightformer
+                form="rect"
+                color="#777777"
+                intensity={2.2}
+                position={[0, -1, -4]}
+                scale={[5, 3, 1]}
+                target={[0, 0, 0]}
+              />
+              <Lightformer
+                form="rect"
+                color="#eeeeee"
+                intensity={2}
+                position={[0, 4, 0]}
+                scale={[4, 1, 1]}
+                target={[0, 0, 0]}
+              />
             </Environment>
-            <LiquidMetalLogo />
+            <ReflectiveGlassLogo />
           </Suspense>
         </Canvas>
       )}

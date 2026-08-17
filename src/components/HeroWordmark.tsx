@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import BlurText from "./BlurText";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -103,6 +104,7 @@ if (typeof window !== "undefined") {
 const HEADER_PAD_X_FALLBACK = 20; // px — fallback if nav padding can't be read
 const HEADER_PAD_Y_FALLBACK = 16; // px — fallback if nav padding can't be read
 const TARGET_FONT_SIZE = 24; // px — final wordmark size (≈ header-logo scale)
+const BLUR_OVERSCAN = 12; // px — keeps the initial filter bloom inside the blend group
 
 // Adaptive frame-rate handling. If the gap between rAF ticks exceeds
 // 500 ms we assume a tab-switch and stop compensating (don't fast-forward
@@ -114,7 +116,7 @@ interface HeroWordmarkProps {
 }
 
 export function HeroWordmark({ text }: HeroWordmarkProps) {
-  const wordmarkRef = useRef<HTMLSpanElement>(null);
+  const wordmarkRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const wordmark = wordmarkRef.current;
@@ -239,12 +241,12 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
         const startY = rect.top;
         const finalW = w * targetScale;
         const finalH = h * targetScale;
-        const left = Math.min(startX, headerPadX);
-        const top = Math.min(startY, headerPadY);
-        const right = Math.max(startX + w, headerPadX + finalW);
-        const bottom = Math.max(startY + h, headerPadY + finalH);
-        group.style.left = `${Math.max(0, left)}px`;
-        group.style.top = `${Math.max(0, top)}px`;
+        const left = Math.max(0, Math.min(startX, headerPadX) - BLUR_OVERSCAN);
+        const top = Math.max(0, Math.min(startY, headerPadY) - BLUR_OVERSCAN);
+        const right = Math.max(startX + w, headerPadX + finalW) + BLUR_OVERSCAN;
+        const bottom = Math.max(startY + h, headerPadY + finalH) + BLUR_OVERSCAN;
+        group.style.left = `${left}px`;
+        group.style.top = `${top}px`;
         group.style.width = `${Math.max(1, right - left)}px`;
         group.style.height = `${Math.max(1, bottom - top)}px`;
       };
@@ -386,9 +388,18 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
   }, []);
 
   return (
-    <span ref={wordmarkRef} className="m-hero__wordmark-display">
-      {text}
-    </span>
+    <div ref={wordmarkRef} className="m-hero__wordmark-display">
+      <BlurText
+        text={text}
+        animateBy="words"
+        direction="top"
+        delay={150}
+        animationFrom={undefined}
+        animationTo={undefined}
+        onAnimationComplete={undefined}
+        className="m-hero__wordmark-load"
+      />
+    </div>
   );
 }
 

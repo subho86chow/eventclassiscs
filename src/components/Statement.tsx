@@ -89,13 +89,12 @@ export function Statement({
   }, []);
 
   /* Split a paragraph into per-character spans so each letter is its own
-   * animated target. Spaces become non-breaking spaces so the wrap layout
-   * doesn't break mid-word. aria-label on the parent paragraph provides
-   * the full text for screen readers; the spans are visual only. */
+   * animated target. Regular spaces preserve normal word wrapping while
+   * inline letter spans prevent mobile lines from breaking mid-word. */
   function splitChars(text: string): ReactNode {
     return text.split("").map((char, i) => (
       <span key={i} className="statement__letter">
-        {char === " " ? " " : char}
+        {char}
       </span>
     ));
   }
@@ -103,60 +102,62 @@ export function Statement({
   return (
     <section className="statement" id="statement">
       <div className="statement__inner">
-        {/* Top-left: pagination nav */}
-        <nav className="statement__pager" aria-label="Section navigation">
-          <div className="statement__arrows">
-            <button
-              type="button"
-              className="statement__arrow"
-              aria-label="Previous section"
-              disabled
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
+        <div className="statement__left-column">
+          {/* Top-left: pagination nav */}
+          <nav className="statement__pager" aria-label="Section navigation">
+            <div className="statement__arrows">
+              <button
+                type="button"
+                className="statement__arrow"
+                aria-label="Previous section"
+                disabled
               >
-                <line x1="20" y1="12" x2="4" y2="12" />
-                <polyline points="10 18 4 12 10 6" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className="statement__arrow"
-              aria-label="Next section"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="20" y1="12" x2="4" y2="12" />
+                  <polyline points="10 18 4 12 10 6" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                className="statement__arrow"
+                aria-label="Next section"
               >
-                <line x1="4" y1="12" x2="20" y2="12" />
-                <polyline points="14 6 20 12 14 18" />
-              </svg>
-            </button>
-          </div>
-          <span className="statement__pager-count" aria-hidden="true">
-            {current}/{total}
-          </span>
-        </nav>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="4" y1="12" x2="20" y2="12" />
+                  <polyline points="14 6 20 12 14 18" />
+                </svg>
+              </button>
+            </div>
+            <span className="statement__pager-count" aria-hidden="true">
+              {current}/{total}
+            </span>
+          </nav>
 
-        {/* Left column: stat block */}
-        <div className="statement__left">
-          <div className="statement__stat">{stat}</div>
-          <p className="statement__caption">{statCaption}</p>
+          {/* Left column: stat block */}
+          <div className="statement__left">
+            <div className="statement__stat">{stat}</div>
+            <p className="statement__caption">{statCaption}</p>
+          </div>
         </div>
 
         {/* Right column: editorial copy */}

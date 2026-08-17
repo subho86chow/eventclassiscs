@@ -105,7 +105,7 @@ export function FAQ() {
               <br />
               Chat with Huy.
             </h3>
-            <a className="faq__cta-button" href="#book">
+            <a className="m-hero__cta faq__cta-button" href="#book">
               <span>Book a call with Huy</span>
               <svg
                 width="14"
@@ -164,7 +164,9 @@ export function FAQ() {
                     role="region"
                     aria-hidden={!isOpen}
                   >
-                    <p className="faq__answer-text">{faq.answer}</p>
+                    <p className="faq__answer-text">
+                      {faq.answer}
+                    </p>
                   </div>
                 </li>
               );

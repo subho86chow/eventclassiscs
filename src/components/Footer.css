@@ -1,7 +1,7 @@
 /* Hallmark · site footer.
  * Two-region layout on a dark canvas:
  *   left column  · large editorial nav list
- *   right column · 3D rotating logo on top, then "(STUDIO DETAILS)"
+ *   right column · looping logo video on top, then "(STUDIO DETAILS)"
  *                 and "(SOCIALS)" stacked side-by-side on desktop and
  *                 collapsing to a single column on mobile.
  */
@@ -11,7 +11,8 @@
   background: var(--ink);
 
   width: 100%;
-  padding-block: clamp(5rem, 10vw, 10rem);
+  padding-block-start: clamp(5rem, 10vw, 10rem);
+  padding-block-end: clamp(0.75rem, 1.5vw, 1.5rem);
 }
 
 .footer__inner {
@@ -20,7 +21,7 @@
   padding-inline: clamp(var(--space-md), 5vw, var(--space-2xl));
 
   display: grid;
-  /* Left column ~35 %, right column ~65 % (3D on top, details+socials
+  /* Left column ~35 %, right column ~65 % (logo on top, details+socials
    * below). */
   grid-template-columns: minmax(0, 7fr) minmax(0, 13fr);
   column-gap: clamp(2rem, 4vw, 4rem);
@@ -39,29 +40,7 @@
 .footer__nav-col {
   display: flex;
   flex-direction: column;
-  gap: clamp(1.5rem, 3vw, 2rem);
-}
-
-.footer__nav-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-.footer__dot {
-  display: inline-block;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: color-mix(in oklch, var(--paper) 80%, transparent);
-  flex-shrink: 0;
-}
-
-.footer__nav-label {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
+  gap: 0;
 }
 
 .footer__nav-list {
@@ -100,6 +79,63 @@
   outline: none;
 }
 
+/* The supplied magnetic wrapper fills the otherwise-empty area below the
+ * footer navigation, so pointer movement near the CTA can attract it. */
+.footer__magnetic-zone {
+  position: relative;
+  min-height: clamp(14rem, 28vw, 24rem);
+  display: grid;
+  place-items: center;
+  color: var(--paper);
+  mix-blend-mode: normal;
+  text-decoration: none;
+}
+
+.footer__talk-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.12em;
+  color: inherit;
+  mix-blend-mode: normal;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: clamp(2.75rem, 5.5vw, 5.5rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+}
+
+.footer__magnetic-zone > div {
+  --show-color: transparent !important;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  border-radius: 0;
+}
+
+.footer .footer__contact-button {
+  position: relative;
+  inset: auto;
+  z-index: 1;
+  opacity: 0;
+  transform: none;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-normal) var(--ease-out),
+    background-color var(--dur-normal) var(--ease-out),
+    color var(--dur-normal) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .footer__magnetic-zone:hover .footer__contact-button,
+  .footer__magnetic-zone:focus-visible .footer__contact-button {
+    opacity: 1;
+  }
+}
+
 .footer__nav-link:focus-visible {
   text-decoration: underline;
   text-decoration-color: color-mix(in oklch, var(--paper) 60%, transparent);
@@ -114,25 +150,18 @@
   gap: clamp(3rem, 6vw, 5rem);
 }
 
-/* 3D object — top of the right column. Override RotatingLogo's default
- * fixed-corner positioning so it fills this container instead of
- * pinning to the viewport. */
-.footer__threed-wrap {
+/* Logo video — top of the right column. */
+.footer__logo-wrap {
   position: relative;
   width: 100%;
   height: clamp(18rem, 32vw, 28rem);
 }
 
-.footer .rotating-logo,
-.footer [class*="rotating-logo"] {
-  position: relative;
-  top: auto;
-  right: auto;
+.footer__logo-video {
+  display: block;
   width: 100%;
   height: 100%;
-  max-width: none;
-  max-height: none;
-  z-index: 0;
+  object-fit: contain;
 }
 
 /* Studio details + Socials — side by side on desktop, stacked on mobile. */
