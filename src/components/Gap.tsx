@@ -2,28 +2,30 @@
 
 import { useLayoutEffect, useRef } from "react";
 import Image from "next/image";
+import { Oi } from "next/font/google";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./Gap.css";
 
+const oi = Oi({
+  weight: "400",
+  style: "normal",
+  subsets: ["latin"],
+  variable: "--font-oi",
+});
+
 /**
  * Hallmark · "We close that gap" section.
  *
- * The display line is split into two phrases — "WE CLOSE" sticky to the
- * left edge of the viewport (with overflow), "THE GAP" sticky to the
- * right (with overflow). As the section scrolls, the two phrases
- * slide horizontally toward each other; by the time the section's
- * mid hits the viewport's mid, the phrases meet in the centre with a
- * real word-space between them — reading as "WE CLOSE THE GAP" like
- * a normal sentence. The image and supporting copy sit below the
- * sticky wrapper and come into view after the closure completes.
+ * The display is split into two rows: "WE CLOSE" enters from the left
+ * and "THE GAP" enters from the right. Each phrase finishes centred in
+ * its own vertical lane, so the large Oi letterforms never overlap.
  *
  * Math
  *   Let:
  *     W  = viewport width
  *     W1 = left-phrase rendered width ("WE CLOSE")
  *     W2 = right-phrase rendered width ("THE GAP")
- *     S  = word-space width at the display's font-size (≈ 0.3 em)
  *     O  = overflow offset on each side at the start (8 vw)
  *
  *   The wrappers carry the overflow via CSS (left: -8vw / right: -8vw)
@@ -31,11 +33,7 @@ import "./Gap.css";
  *   animates only the inner span's x — the wrapper's vertical-centring
  *   transform is untouched.
  *
- *   Final viewport x positions for the phrases' LEFT edges:
- *     left  = (W − W1 − S − W2) / 2
- *     right = (W + W1 + S − W2) / 2
- *   With those two values, the gap between the inner edges of the
- *   phrases equals S — exactly one word-space.
+ *   Each phrase's final viewport x is simply (W − phrase width) / 2.
  *
  *   Because the inner span's x is GSAP-local (relative to its parent
  *   wrapper), the actual GSAP targets are:
@@ -60,20 +58,18 @@ const DEFAULT_COPY =
  * the CSS left/right offsets in Gap.css. */
 const OVERFLOW_RATIO = 0.08;
 
-/* Width of a word-space glyph at the current font-size, in em. 0.3 em
- * is a reasonable approximation for a proportional sans (Geist). */
-const SPACE_EM = 0.3;
-
 export function Gap({ copy = DEFAULT_COPY }: GapProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const leftPhraseRef = useRef<HTMLSpanElement>(null);
   const rightPhraseRef = useRef<HTMLSpanElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const section = sectionRef.current;
     const leftPhrase = leftPhraseRef.current;
     const rightPhrase = rightPhraseRef.current;
-    if (!section || !leftPhrase || !rightPhrase) return;
+    const image = imageRef.current;
+    if (!section || !leftPhrase || !rightPhrase || !image) return;
 
     gsap.registerPlugin(ScrollTrigger);
 
@@ -82,13 +78,11 @@ export function Gap({ copy = DEFAULT_COPY }: GapProps) {
       const vw = window.innerWidth;
       const lw = leftPhrase.offsetWidth;
       const rw = rightPhrase.offsetWidth;
-      const fs = parseFloat(getComputedStyle(leftPhrase).fontSize);
-      const S = (isFinite(fs) && fs > 0 ? fs : 1) * SPACE_EM;
       const O = vw * OVERFLOW_RATIO;
 
-      /* Final viewport x for each phrase's LEFT edge. */
-      const leftFinalX = (vw - lw - S - rw) / 2;
-      const rightFinalX = (vw + lw + S - rw) / 2;
+      /* Centre each phrase independently in its own row. */
+      const leftFinalX = (vw - lw) / 2;
+      const rightFinalX = (vw - rw) / 2;
 
       /* Convert viewport coords to GSAP-local x (which is relative to
        * the parent's CSS position — left wrapper at left: -O, right
@@ -103,11 +97,11 @@ export function Gap({ copy = DEFAULT_COPY }: GapProps) {
       "(prefers-reduced-motion: reduce)",
     ).matches;
     if (prefersReduced) {
-      /* Snap both phrases to their closed position with the word-space
-       * intact — the user still reads "WE CLOSE THE GAP" as a sentence. */
+      /* Snap both phrases to their centred, two-row positions. */
       const { leftTargetX, rightTargetX } = measure();
       gsap.set(leftPhrase, { x: leftTargetX, force3D: true });
       gsap.set(rightPhrase, { x: rightTargetX, force3D: true });
+      gsap.set(image, { scale: 1, force3D: true });
       return;
     }
 
@@ -127,6 +121,7 @@ export function Gap({ copy = DEFAULT_COPY }: GapProps) {
        * spans; the wrappers' CSS offset is what places them off-screen). */
       gsap.set(leftPhrase, { x: 0, force3D: true });
       gsap.set(rightPhrase, { x: 0, force3D: true });
+      gsap.set(image, { scale: 0.45, force3D: true });
 
       timeline = gsap
         .timeline({
@@ -161,6 +156,11 @@ export function Gap({ copy = DEFAULT_COPY }: GapProps) {
         .to(
           rightPhrase,
           { x: rightTargetX, ease: "none", force3D: true },
+          0,
+        )
+        .to(
+          image,
+          { scale: 1, ease: "none", force3D: true },
           0,
         );
     };
@@ -211,7 +211,7 @@ export function Gap({ copy = DEFAULT_COPY }: GapProps) {
         {/* Top region — phrases area. flex: 0 0 auto with a fixed-ish
          * height; phrases are absolutely positioned inside, vertically
          * centred within the region. */}
-        <div className="gap__display">
+        <div className={`gap__display ${oi.variable}`}>
           {/* Each phrase-wrap carries the off-screen overflow via CSS
            * (left: -8vw / right: -8vw) AND owns the vertical-centring
            * transform. GSAP only animates the inner `.gap__phrase`'s
@@ -233,7 +233,7 @@ export function Gap({ copy = DEFAULT_COPY }: GapProps) {
          * Stays put (no animation) until the sticky releases at the
          * end of the section. */}
         <div className="gap__below">
-          <div className="gap__image" aria-hidden="true">
+          <div ref={imageRef} className="gap__image" aria-hidden="true">
             <Image
               src="/gap.png"
               alt=""

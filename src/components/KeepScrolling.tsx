@@ -237,6 +237,8 @@ export function KeepScrolling() {
     const text = section.querySelector("[data-ks-text]");
     const zoom = section.querySelector("[data-ks-zoom]");
     const whiteout = section.querySelector("[data-ks-whiteout]");
+    const stage = section.querySelector("[data-ks-stage]");
+    const smoke = section.querySelector("[data-ks-smoke]");
 
     let mm: gsap.MatchMedia | null = null;
 
@@ -327,19 +329,31 @@ export function KeepScrolling() {
            * Mobile: 0.82 → 0.98 (desktop: 0.8 → 1.0), so the artwork is
            * completely white before the separate handoff tween begins. */
           .to(whiteout, { opacity: 1, duration: whiteoutDuration, force3D: true }, whiteoutStart)
-          /* The artwork is fully finished before this starts. Success Stories
-           * is already moving upward beneath the white stage; fading the
-           * outgoing stage over the final scroll window blends the sections
-           * instead of exposing the next section in a one-frame cut. */
+          /* The artwork is fully finished before this starts. Lift the solid
+           * stage away while Success Stories rises underneath. Only the top
+           * smoke band is translucent, so the incoming content stays sharp
+           * across the lower 70% of the viewport. */
           .to(
-            section,
+            stage,
             {
-              autoAlpha: 0,
+              yPercent: -100,
               duration: handoffDuration,
-              ease: "none",
-              force3D: false,
+              ease: "power2.inOut",
+              force3D: true,
             },
             1,
+          )
+          .set(smoke, { autoAlpha: 1, yPercent: 0 }, 1)
+          .to(
+            smoke,
+            {
+              autoAlpha: 0,
+              yPercent: -20,
+              duration: handoffDuration * 0.45,
+              ease: "sine.inOut",
+              force3D: true,
+            },
+            1 + handoffDuration * 0.55,
           );
 
         /* Column drift — its own trigger so it also runs while the section
@@ -372,24 +386,24 @@ export function KeepScrolling() {
        * stable large viewport and does not resize under mobile browser UI. */
       mm.add("(max-width: 768px)", () => {
         buildStage({
-          pinEnd: "+=216%",
+          pinEnd: "+=248%",
           zoomStart: 0.4,
           zoomScale: MOBILE_ZOOM_FINAL,
           whiteoutStart: 0.82,
           whiteoutDuration: 0.16,
-          handoffDuration: 0.08,
+          handoffDuration: 0.24,
           driftEnd: "+=300%",
         });
       });
 
       mm.add("(min-width: 769px)", () => {
         buildStage({
-          pinEnd: "+=315%",
+          pinEnd: "+=348%",
           zoomStart: 0.32,
           zoomScale: DESKTOP_ZOOM_FINAL,
           whiteoutStart: 0.8,
           whiteoutDuration: 0.2,
-          handoffDuration: 0.05,
+          handoffDuration: 0.16,
           driftEnd: "+=400%",
         });
       });
@@ -407,12 +421,13 @@ export function KeepScrolling() {
 
   return (
     <section ref={sectionRef} className="keep-scrolling" aria-label="Keep scrolling">
-      <svg
-        className="keep-scrolling__art"
-        viewBox="0 0 1200 800"
-        preserveAspectRatio="xMidYMid slice"
-        aria-hidden="true"
-      >
+      <div className="keep-scrolling__stage" data-ks-stage>
+        <svg
+          className="keep-scrolling__art"
+          viewBox="0 0 1200 800"
+          preserveAspectRatio="xMidYMid slice"
+          aria-hidden="true"
+        >
         {/* ---------- Capsule grid (bg), grouped per column for drift ---------- */}
         <g
           className="keep-scrolling__grid"
@@ -487,12 +502,15 @@ export function KeepScrolling() {
         >
           {SCROLL_TEXT}
         </text>
-      </svg>
+        </svg>
 
-      {/* Whiteout veil — *above* the SVG (DOM order) so it covers the
-       * marching text and stadium too as it fades in, landing the stage on
-       * pure white exactly when the pin releases. */}
-      <div className="keep-scrolling__whiteout" data-ks-whiteout aria-hidden="true" />
+        {/* Whiteout veil — *above* the SVG (DOM order) so it covers the
+         * marching text and stadium too as it fades in, landing the stage on
+         * pure white before the handoff begins. */}
+        <div className="keep-scrolling__whiteout" data-ks-whiteout aria-hidden="true" />
+      </div>
+
+      <div className="keep-scrolling__smoke" data-ks-smoke aria-hidden="true" />
     </section>
   );
 }

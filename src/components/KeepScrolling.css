@@ -4,13 +4,12 @@
  * "KEEP SCROLLING • " text. On scroll (GSAP ScrollTrigger, see
  * KeepScrolling.tsx): grid columns drift vertically in alternating
  * directions (centre column fixed), the grid fades, the stadium floods
- * white, and a whiteout veil lands the stage on pure white before the
- * short crossfade into Success Stories.
+ * white, then the completed stage lifts away behind a short white-smoke
+ * band to reveal Success Stories.
  */
 
 .keep-scrolling {
   position: relative;
-  background: var(--ink);
   /* SVG strokes use currentColor — must resolve to the paper ink, not
    * the body's foreground (dark ink in light mode), or the grid pills
    * vanish into the near-black background. */
@@ -21,6 +20,35 @@
   width: 100%;
 
   overflow: hidden;
+}
+
+.keep-scrolling__stage {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  background: var(--ink);
+}
+
+/* A narrow atmospheric handoff rather than a full-screen crossfade.
+ * It softens only the top 30% while Success Stories remains crisp below. */
+.keep-scrolling__smoke {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  height: 30svh;
+
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+
+  background: color-mix(in oklch, var(--paper) 72%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(0.82);
+  backdrop-filter: blur(22px) saturate(0.82);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 48%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0 48%, transparent 100%);
 }
 
 /* Whiteout veil — *above* the SVG in paint order (it comes last in the

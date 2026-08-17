@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import "./FAQ.css";
 
 /**
@@ -11,12 +11,9 @@ import "./FAQ.css";
  *                   "Got more questions? Chat with Huy." and a Book-a-call
  *                   button.
  *   col 2 (right) · Big editorial headline + accordion of questions.
- *                   Clicking a question expands its answer via a CSS
- *                   grid-template-rows transition (0fr → 1fr) — no
- *                   JavaScript-driven height tween, so the browser never
- *                   forces per-frame layout. Opening one closes any
- *                   other that's already open — classic single-open
- *                   accordion.
+ *                   Clicking a question expands its answer with CSS.
+ *                   Opening one closes any other that's already open —
+ *                   classic single-open accordion.
  *
  * prefers-reduced-motion snaps the open/close instantly (CSS handles it).
  */
@@ -66,47 +63,34 @@ const FAQS: ReadonlyArray<FAQItem> = [
 
 export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const toggleRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  /* Toggle the open question. The expand/collapse is CSS-driven
-   * (grid-template-rows: 0fr → 1fr) so there is no GSAP height tween
-   * forcing layout every frame — see FAQ.css. Single-open behaviour:
-   * clicking any item closes the previously-open one. */
   const toggle = (i: number) => {
-    const wasOpen = openIndex === i;
-    setOpenIndex(wasOpen ? null : i);
-    const toggleBtn = toggleRefs.current[i];
-    if (toggleBtn) {
-      toggleBtn.setAttribute("aria-expanded", wasOpen ? "false" : "true");
-    }
+    setOpenIndex((current) => (current === i ? null : i));
   };
 
   return (
     <section className="faq" id="faq">
       <div className="faq__inner">
-        {/* ───── Col 1 — photo + CTA ───── */}
-        <div className="faq__left">
-          <header className="faq__label-row">
-            <span className="faq__dot" aria-hidden="true" />
-            <span className="faq__label">FAQs</span>
-          </header>
+        <header className="faq__label-row">
+          <span className="faq__dot" aria-hidden="true" />
+          <span className="faq__label">FAQs</span>
+        </header>
 
+        <aside className="faq__support">
           <div
-            className="faq__photo"
+            className=""
             role="img"
             aria-label="Photo of Huy"
-          >
-            <span className="faq__photo-label">PHOTO</span>
-          </div>
+          />
 
           <div className="faq__cta">
             <h3 className="faq__cta-heading">
               Got more questions?
               <br />
-              Chat with Huy.
+              Chat with us
             </h3>
             <a className="m-hero__cta faq__cta-button" href="#book">
-              <span>Book a call with Huy</span>
+              <span>Book a call with us</span>
               <svg
                 width="14"
                 height="14"
@@ -123,7 +107,7 @@ export function FAQ() {
               </svg>
             </a>
           </div>
-        </div>
+        </aside>
 
         {/* ───── Col 2 — headline + accordion ───── */}
         <div className="faq__right">
@@ -141,9 +125,6 @@ export function FAQ() {
                 >
                   <button
                     type="button"
-                    ref={(el) => {
-                      toggleRefs.current[i] = el;
-                    }}
                     className="faq__question"
                     aria-expanded={isOpen}
                     aria-controls={`faq-answer-${i}`}
@@ -152,10 +133,6 @@ export function FAQ() {
                     <span className="faq__question-text">
                       {faq.question}
                     </span>
-                    <span
-                      className="faq__toggle"
-                      aria-hidden="true"
-                    />
                   </button>
 
                   <div

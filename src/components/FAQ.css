@@ -1,120 +1,85 @@
-/* Hallmark · FAQ section.
- * Two-column light layout: photo + CTA card on the left, big headline
- * + accordion on the right. GSAP animates the accordion expand/collapse
- * with a smooth height + opacity tween.
- *
- * Dark→light inversion: every "oklch(96%) → oklch(15%)" with the same
- * alpha. The photo + cta button preserve their accent treatments.
- */
+/* Editorial FAQ: reference-led two-column layout with a weighted hover
+ * surface and a single-open accordion. */
 
 .faq {
   position: relative;
-  background: var(--paper);
-  color: var(--ink);
-
   width: 100%;
-  padding-block: clamp(6rem, 12vw, 12rem);
+  padding-block: clamp(2rem, 3svh, 3rem);
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .faq__inner {
-  position: relative;
-  max-width: 90rem;
-  margin-inline: auto;
-  padding-inline: clamp(var(--space-md), 5vw, var(--space-2xl));
+  width: 100%;
+  min-height: calc(100svh - clamp(4rem, 6svh, 6rem));
+  padding-inline: clamp(1.25rem, 2vw, 3rem);
 
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
-  column-gap: clamp(2rem, 5vw, 5rem);
-  row-gap: clamp(2rem, 4vw, 4rem);
+  grid-template-columns: minmax(15rem, 0.32fr) minmax(0, 0.68fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "label content"
+    "support content";
+  column-gap: clamp(2rem, 4vw, 5rem);
+  row-gap: clamp(2rem, 4svh, 3rem);
   align-items: start;
 }
 
-@media (max-width: 900px) {
-  .faq__inner {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* ───────── Col 1 — photo + CTA ───────── */
-
-.faq__left {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(1.5rem, 3vw, 2.5rem);
-  position: sticky;
-  top: clamp(1.5rem, 3vw, 2.5rem);
-}
-
-@media (max-width: 900px) {
-  .faq__left {
-    position: static;
-  }
-}
-
 .faq__label-row {
+  grid-area: label;
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 1rem;
 }
 
 .faq__dot {
-  display: inline-block;
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  flex: 0 0 auto;
   border-radius: 50%;
-  background: var(--ink);
-  flex-shrink: 0;
+  background: color-mix(in oklch, var(--paper) 72%, transparent);
 }
 
 .faq__label {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-sans);
+  font-size: clamp(0.9375rem, 1.2vw, 1.25rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
   mix-blend-mode: normal;
+}
+
+.faq__support {
+  grid-area: support;
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: min(100%, 13rem);
 }
 
 .faq__photo {
   width: 100%;
-  max-width: 18rem;
-  aspect-ratio: 4 / 5;
-  border-radius: 4px;
-  background:
-    linear-gradient(
-      135deg,
-      oklch(35% 0.05 60) 0%,
-      oklch(25% 0.04 30) 100%
-    );
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.faq__photo-label {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--paper);
-  mix-blend-mode: normal;
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: url("/huy-faq.png") center / cover no-repeat;
 }
 
 .faq__cta {
   display: flex;
   flex-direction: column;
-  gap: clamp(0.75rem, 1.5vw, 1rem);
-  max-width: 18rem;
+  align-items: flex-start;
+  gap: 0.875rem;
 }
 
 .faq__cta-heading {
   margin: 0;
+  color: color-mix(in oklch, var(--paper) 54%, transparent);
   font-family: var(--font-sans);
-  font-weight: 500;
-  font-size: clamp(1rem, 1.4vw, 1.25rem);
-  line-height: 1.4;
-  letter-spacing: -0.005em;
-  color: var(--ink);
+  font-size: clamp(1rem, 1.15vw, 1.2rem);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
   mix-blend-mode: normal;
 }
 
@@ -123,25 +88,34 @@
   inset: auto;
   z-index: 0;
   align-self: flex-start;
+  border-color: var(--paper);
+  background: var(--paper);
+  color: var(--ink);
 }
 
-/* ───────── Col 2 — headline + accordion ───────── */
+.faq .faq__cta-button span,
+.faq .faq__cta-button svg {
+  color: inherit;
+  mix-blend-mode: normal;
+}
 
 .faq__right {
+  grid-area: content;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: clamp(2rem, 4vw, 3rem);
+  gap: clamp(1.75rem, 3svh, 2.75rem);
 }
 
 .faq__headline {
+  max-width: 17ch;
   margin: 0;
+  color: var(--paper);
   font-family: var(--font-sans);
-  font-weight: 600;
-  font-size: clamp(1.75rem, 4vw, 3.75rem);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  max-width: 22ch;
-  color: var(--ink);
+  font-size: clamp(2.75rem, 4.2vw, 5.25rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.055em;
   mix-blend-mode: normal;
 }
 
@@ -149,129 +123,74 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  display: flex;
-  flex-direction: column;
 }
 
 .faq__item {
-  border-top: 1px solid color-mix(in oklch, var(--ink) 18%, transparent);
-  color: var(--ink);
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid color-mix(in oklch, var(--paper) 16%, transparent);
+  background: transparent;
+  color: var(--paper);
   mix-blend-mode: normal;
+  transition:
+    background-color 140ms ease-out,
+    color 140ms ease-out;
 }
 
 .faq__item:last-child {
-  border-bottom: 1px solid color-mix(in oklch, var(--ink) 18%, transparent);
+  border-bottom: 1px solid color-mix(in oklch, var(--paper) 16%, transparent);
+}
+
+.faq__item:hover,
+.faq__item--open {
+  background: var(--paper);
+  color: var(--ink);
 }
 
 .faq__question {
+  position: relative;
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
+  justify-content: flex-start;
 
-  padding-block: clamp(1rem, 1.8vw, 1.5rem);
-
-  background: transparent;
+  min-height: 3.25rem;
+  padding: 0.75rem 1rem;
   border: 0;
+  background: transparent;
+  color: inherit;
   font-family: var(--font-sans);
-  font-weight: 400;
-  font-size: clamp(0.9375rem, 1.15vw, 1.0625rem);
-  line-height: 1.45;
+  font-size: clamp(0.875rem, 0.95vw, 1.05rem);
+  font-weight: 560;
+  line-height: 1.25;
   text-align: left;
   cursor: pointer;
-  color: var(--ink);
   mix-blend-mode: normal;
-
-  transition: color var(--dur-fast) var(--ease-out);
-}
-
-.faq__question:hover,
-.faq__question:focus-visible {
-  outline: none;
 }
 
 .faq__question:focus-visible {
-  text-decoration: underline;
-  text-decoration-color: color-mix(in oklch, var(--ink) 60%, transparent);
-  text-underline-offset: 0.25em;
+  outline: 2px solid currentColor;
+  outline-offset: -5px;
 }
 
 .faq__question-text {
-  flex: 1;
+  width: 100%;
   color: inherit;
   mix-blend-mode: normal;
 }
 
-/* Toggle indicator — small hollow circle that rotates 45° when the item
- * is open, forming an × from the +/close icon family. */
-.faq__toggle {
-  flex-shrink: 0;
-  width: 0.875rem;
-  height: 0.875rem;
-  border: 1px solid color-mix(in oklch, var(--ink) 70%, transparent);
-  border-radius: 50%;
-  position: relative;
-  transition:
-    transform 360ms var(--ease-out),
-    background-color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
-}
-
-.faq__toggle::before,
-.faq__toggle::after {
-  content: "";
-  position: absolute;
-  background: var(--ink);
-  transition: background-color var(--dur-fast) var(--ease-out);
-}
-
-.faq__toggle::before {
-  /* horizontal bar — vertical-line pseudo on a circle reads as + when
-   * the circle is upright. */
-  top: 50%;
-  left: 2px;
-  right: 2px;
-  height: 1px;
-  transform: translateY(-50%);
-}
-
-.faq__toggle::after {
-  /* vertical bar — closes the + into an × via rotation. */
-  left: 50%;
-  top: 2px;
-  bottom: 2px;
-  width: 1px;
-  transform: translateX(-50%);
-}
-
-.faq__item--open .faq__toggle {
-  transform: rotate(45deg);
-  background: color-mix(in oklch, var(--ink) 12%, transparent);
-  border-color: var(--ink);
-}
-
-/* Answer wrapper — CSS-driven expand/collapse via grid-template-rows
- * transition: 0fr → 1fr. This is the modern, GPU-friendly way to animate
- * auto-sized height: the browser interpolates the row track size without
- * per-frame layout, and the inner content's overflow: hidden + min-height:
- * 0 clips cleanly during the transition. Replaces the previous GSAP
- * `height` tween, which forced synchronous layout every frame and was the
- * worst jank source on click. */
 .faq__answer {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
   transition:
-    grid-template-rows 0.35s var(--ease-out),
-    opacity 0.35s var(--ease-out);
+    grid-template-rows 520ms cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 360ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 
-/* Direct children clip during the transition. min-height: 0 is required
- * in Chrome / Edge for `0fr` to actually collapse to zero. */
 .faq__answer > * {
-  overflow: hidden;
   min-height: 0;
+  overflow: hidden;
 }
 
 .faq__item--open .faq__answer {
@@ -280,29 +199,67 @@
 }
 
 .faq__answer-text {
-  margin: 0 0 clamp(1rem, 1.8vw, 1.5rem) 0;
+  max-width: 62ch;
+  margin: 0;
+  padding: 0 1rem 1rem;
+  color: inherit;
   font-family: var(--font-sans);
+  font-size: clamp(0.8125rem, 0.85vw, 0.9375rem);
   font-weight: 400;
-  font-size: clamp(0.875rem, 1vw, 0.9375rem);
   line-height: 1.55;
-  letter-spacing: -0.005em;
-  max-width: 56ch;
-  color: var(--ink);
+  letter-spacing: -0.01em;
+  text-align: left;
   mix-blend-mode: normal;
 }
 
-/* Override the global white/difference typography rule for the accordion. */
-.faq .faq__question,
-.faq .faq__question-text,
-.faq .faq__answer-text {
-  color: var(--ink) !important;
-  mix-blend-mode: normal !important;
+@media (max-width: 900px) {
+  .faq__inner {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas:
+      "label"
+      "content"
+      "support";
+    row-gap: clamp(2rem, 7vw, 3.5rem);
+  }
+
+  .faq__right {
+    gap: clamp(2rem, 7vw, 3rem);
+  }
+
+  .faq__headline {
+    max-width: 16ch;
+    font-size: clamp(2.4rem, 8vw, 4rem);
+  }
+
+  .faq__support {
+    width: min(100%, 14rem);
+  }
+}
+
+@media (max-width: 520px) {
+  .faq {
+    padding-block: 2.5rem;
+  }
+
+  .faq__headline {
+    font-size: clamp(2.2rem, 10vw, 3rem);
+  }
+
+  .faq__question {
+    min-height: 3rem;
+    padding-block: 0.65rem;
+    font-size: 0.875rem;
+  }
+
+  .faq__answer-text {
+    font-size: 0.8125rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* Snap open / closed — no animation. The answer still toggles via the
-   * button; it just appears instantly instead of transitioning. */
-  .faq__toggle,
+  .faq__item,
   .faq__answer {
     transition: none;
   }

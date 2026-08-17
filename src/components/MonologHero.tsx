@@ -37,7 +37,7 @@ const DEFAULT_LINKS = [
 ] as const;
 
 export function MonologHero({
-  brand = "eventclassics",
+  brand = "eventclassics.in",
   navLinks = DEFAULT_LINKS,
   para1 = "We design change-making website experiences for brands whose reputation has outgrown their digital presence.",
   cta = { label: "Start a project", href: "#start" },
@@ -126,21 +126,23 @@ export function MonologHero({
        * body-level sibling it keeps its true 200. The mobile layout in
        * MonologHero.css repositions it without reparenting. */}
       <a className="m-hero__cta" href={cta.href}>
-        <span>{cta.label}</span>
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <line x1="7" y1="17" x2="17" y2="7" />
-          <polyline points="7 7 17 7 17 17" />
-        </svg>
+        <span className="m-hero__cta-label">{cta.label}</span>
+        <span className="m-hero__cta-arrow" aria-hidden="true">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <line x1="7" y1="17" x2="17" y2="7" />
+            <polyline points="7 7 17 7 17 17" />
+          </svg>
+        </span>
       </a>
 
       {/* Fixed full-viewport blend group for the wordmark — rendered

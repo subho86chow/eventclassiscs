@@ -1,11 +1,6 @@
 /* Hallmark · "We close that gap" section.
- *
- * The display line splits into two phrases ("WE CLOSE" left, "THE
- * GAP" right) and is pinned to the viewport via a sticky wrapper. A
- * scroll-driven GSAP timeline brings the two phrases together so they
- * meet in the centre by the time the section's mid reaches the
- * viewport's mid. Below the sticky wrapper sits the image placeholder
- * and supporting copy, which come into view after the closure plays.
+ * "WE CLOSE" enters from the left into the upper lane; "THE GAP"
+ * enters from the right into the lower lane.
  *
  * Section height: min-height: 200vh. ScrollTrigger range
  * "top top" → "center center" therefore gives ~50vh of scroll-driven
@@ -65,11 +60,12 @@
   right: 0;
   margin: 0;
   transform: translateY(-50%);
-  height: clamp(5rem, 10vw, 9rem);
+  height: 2.2em;
   z-index: 2;
 
-  font-family: var(--font-sans);
-  font-weight: 700;
+  font-family: var(--font-oi), serif;
+  font-weight: 400;
+  font-style: normal;
   /* Same scale as before — large display line that fills the band. */
   font-size: clamp(2.75rem, 9vw, 10rem);
   line-height: 0.92;
@@ -77,30 +73,23 @@
   text-align: center;
   /* Colour + invert inherited from globals.css. */
 
-  /* Phrases must stay on a single line so the gap they leave between
-   * them reads as empty horizontal space rather than a vertical split. */
   white-space: nowrap;
 }
 
-/* Each phrase-wrap carries the initial off-screen overflow (8 vw on
- * each side). They sit at the vertical centre of `.gap__display` —
- * top: 50% + translateY(-50%) centres them on the display's midline.
- * The wrappers don't need a transform for the phrases' GSAP x tween
- * because GSAP writes its own transform on the inner `.gap__phrase`
- * (a different element entirely). */
+/* Each phrase keeps its own vertical lane while GSAP animates only the
+ * inner span's horizontal position. */
 .gap__phrase-wrap {
   position: absolute;
-  top: 50%;
   transform: translateY(-50%);
 }
 
 .gap__phrase-wrap--left {
-  /* 8 vw overflow on the left — must match OVERFLOW_RATIO in Gap.tsx. */
+  top: 22%;
   left: -8vw;
 }
 
 .gap__phrase-wrap--right {
-  /* 8 vw overflow on the right — must match OVERFLOW_RATIO in Gap.tsx. */
+  top: 78%;
   right: -8vw;
 }
 
@@ -139,6 +128,9 @@
   width: clamp(180px, 22vw, 320px);
   aspect-ratio: 3 / 4; /* portrait orientation matching a product photo */
   margin-block: clamp(1rem, 2vw, 1.5rem);
+  transform: scale(0.45);
+  transform-origin: center;
+  will-change: transform;
 
   /* Soft drop shadow to lift the image off the page. */
   filter: drop-shadow(
@@ -154,6 +146,12 @@
 @media (max-width: 768px) {
   .gap__image {
     width: 60%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gap__image {
+    transform: scale(1);
   }
 }
 

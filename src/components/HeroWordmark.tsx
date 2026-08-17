@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import BlurText from "./BlurText";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -93,6 +92,12 @@ interface HeroWordmarkProps {
 
 export function HeroWordmark({ text }: HeroWordmarkProps) {
   const wordmarkRef = useRef<HTMLDivElement>(null);
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setIsActive(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     const wordmark = wordmarkRef.current;
@@ -282,16 +287,18 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
 
   return (
     <div ref={wordmarkRef} className="m-hero__wordmark-display">
-      <BlurText
-        text={text}
-        animateBy="words"
-        direction="top"
-        delay={150}
-        animationFrom={undefined}
-        animationTo={undefined}
-        onAnimationComplete={undefined}
-        className="m-hero__wordmark-load"
-      />
+      <span className="m-hero__wordmark-load" aria-label={text}>
+        {Array.from(text).map((character, index) => (
+          <span
+            key={`${character}-${index}`}
+            aria-hidden="true"
+            className={`m-hero__wordmark-letter${isActive ? " m-hero__wordmark-letter--active" : ""}`}
+            style={{ transitionDelay: isActive ? `${index * 20}ms` : "0ms" }}
+          >
+            {character === " " ? "\u00a0" : character}
+          </span>
+        ))}
+      </span>
     </div>
   );
 }

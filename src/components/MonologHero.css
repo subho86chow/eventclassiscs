@@ -201,15 +201,20 @@
 
   display: inline-flex;
   align-items: center;
-  gap: 0.6em;
+  gap: 0.875rem;
 
   font-weight: 500;
   font-size: 0.9375rem;
   letter-spacing: -0.005em;
 
-  /* 1px border at rest (the ink ring) — subtract it from the padding so
-   * the pill's footprint stays identical to the pre-ring size. */
-  padding: calc(0.625rem - 1px) calc(1.4rem - 1px);
+  /* Fixed height so the arrow circle (sized to --cta-h) can fill the
+   * pill's full height and its 50% radius lines up with the pill's
+   * right-end 999px rounding. Left inset only — the circle is flush
+   * against the right edge. */
+  --cta-h: 2.75rem;
+  height: var(--cta-h);
+  /* 2px right inset keeps the circle inside the pill instead of flush. */
+  padding: 0 2px 0 1.25rem;
   border: 1px solid var(--color-foreground);
   border-radius: 999px;
 
@@ -221,18 +226,38 @@
   white-space: nowrap;
 
   transition:
-    background-color var(--dur-normal) var(--ease-out),
-    color var(--dur-normal) var(--ease-out);
+    background-color var(--dur-normal) var(--ease-in-out),
+    color var(--dur-normal) var(--ease-in-out),
+    border-color var(--dur-normal) var(--ease-in-out);
 }
 
-/* The label span and arrow svg are in globals.css's :where() invert
- * list, which sets color: #fff directly on them (specificity 0, beats
- * nothing) — so we must re-tie them to the pill's own color, otherwise
- * the hover flip never reaches the text/arrow. */
-.m-hero__cta span,
-.m-hero__cta svg {
+/* The label span is in globals.css's :where() invert list, which sets
+ * color: #fff directly on it (specificity 0, beats nothing) — so we
+ * must re-tie it to the pill's own color, otherwise the hover flip
+ * never reaches the text. */
+.m-hero__cta-label {
   color: currentColor;
   mix-blend-mode: normal;
+}
+
+/* Circular badge that holds the arrow. Black at rest (white arrow),
+ * white on hover (black arrow) — the inverse of the pill itself. */
+.m-hero__cta-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--cta-h) - 4px);
+  height: calc(var(--cta-h) - 4px);
+  border-radius: 50%;
+
+  background: var(--color-foreground);
+  color: var(--color-paper);
+
+  mix-blend-mode: normal;
+
+  transition:
+    background-color var(--dur-normal) var(--ease-in-out),
+    color var(--dur-normal) var(--ease-in-out);
 }
 
 .m-hero__cta:hover {
@@ -244,13 +269,23 @@
   background: var(--color-ink-dim);
 }
 
-/* Arrow slides up-right along its diagonal on hover. */
-.m-hero__cta svg {
-  transition: transform var(--dur-fast) var(--ease-out);
+/* Arrow sits at 45° up-right at rest; on hover it rotates -135°
+ * (counter-clockwise) to point left, toward the label. */
+.m-hero__cta-arrow svg {
+  color: currentColor;
+  mix-blend-mode: normal;
+  transform: rotate(0deg);
+  transform-origin: 50% 50%;
+  transition: transform var(--dur-normal) var(--ease-in-out);
 }
 
-.m-hero__cta:hover svg {
-  transform: translate(3px, -3px);
+.m-hero__cta:hover .m-hero__cta-arrow {
+  background: var(--color-paper);
+  color: var(--color-foreground);
+}
+
+.m-hero__cta:hover .m-hero__cta-arrow svg {
+  transform: rotate(-135deg);
 }
 
 .m-hero__cta:focus-visible {
@@ -320,10 +355,7 @@
 /* The bar is a positioning context; the wordmark itself is absolutely
  * centred on it so it stays anchored to viewport centre regardless of width.
  *
- * Sizing math: "eventclassics" at Geist 800 with -0.05em letter-spacing
- * has a glyph-row width of ~5.85em. To fill exactly the 90 vw content area
- * (defined by the hero's 5 vw horizontal padding) the font-size must scale
- * at 90 vw ÷ 5.85em ≈ 15.4 vw.
+ * The reserved height tracks the responsive `eventclassics.in` wordmark.
  */
 
 .m-hero__wordmark-bar {
@@ -336,7 +368,7 @@
    * correctly. Tracks the wordmark's font-size to always accommodate
    * the type.
    */
-  height: clamp(2.5rem, 15.4vw, 30rem);
+  height: clamp(2.25rem, 12.5vw, 24rem);
   line-height: 0.78;
 }
 
@@ -474,17 +506,14 @@
   font-optical-sizing: auto;
   font-weight: 800;
   font-style: normal;
-  /* 90 vw ÷ 5.455em ≈ 16.5 vw → wordmark fills the 90 vw content area
-   * (hero padding-inline: 5 vw). "eventclassics" at Bricolage Grotesque
-   * 800 with -0.05em letter-spacing measures ~5.455em (measured at the
-   * display cut, opsz auto). Max cap at 30 rem (480 px) prevents the
-   * type from getting absurd on ultrawide viewports.
+  /* Sized for the longer `eventclassics.in` string and its individually
+   * animated character boxes, leaving safe room at both viewport edges.
    *
    * The size shrink on scroll is done via `transform: scale()` in
    * HeroWordmark, NOT by animating font-size — that would reflow every
    * frame and tank the frame rate.
    */
-  font-size: clamp(4rem, 16.5vw, 30rem);
+  font-size: clamp(2.25rem, 12.5vw, 24rem);
   letter-spacing: -0.05em;
   text-transform: none;
   white-space: nowrap;
@@ -511,9 +540,8 @@
   mix-blend-mode: normal;
 }
 
-/* Keep the React Bits component untouched; this only removes the browser's
- * default paragraph spacing and preserves the wordmark's existing layout. */
 .m-hero__wordmark-load {
+  display: inline-block;
   margin: 0;
   padding: 0;
   white-space: nowrap;
@@ -524,6 +552,28 @@
 .m-hero__wordmark-load > span {
   color: inherit;
   mix-blend-mode: normal;
+}
+
+.m-hero__wordmark-letter {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.5em);
+  transition:
+    transform 150ms var(--ease-out),
+    opacity 150ms var(--ease-out);
+}
+
+.m-hero__wordmark-letter--active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m-hero__wordmark-letter {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 
 /* ---------- Desktop / tablet ---------- */
@@ -581,7 +631,7 @@
    * ordinary content gaps are capped in rem so they do not breathe with
    * the viewport during a scroll. */
   :root {
-    --wordmark-stack: calc(0.6 * clamp(4rem, 16.5vw, 30rem) + 5vw);
+    --wordmark-stack: calc(0.6 * clamp(2.25rem, 12.5vw, 24rem) + 5vw);
     --hero-copy-gap: clamp(6rem, 15svh, 8rem);
     --hero-cta-gap: 1rem;
   }
@@ -644,7 +694,9 @@
   .m-hero__toggle:hover,
   .m-hero__toggle:active,
   .m-hero__cta:hover,
-  .m-hero__cta:active {
+  .m-hero__cta:active,
+  .m-hero__cta:hover .m-hero__cta-arrow,
+  .m-hero__cta:hover .m-hero__cta-arrow svg {
     transform: none;
   }
 }

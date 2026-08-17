@@ -6,18 +6,14 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./Statement.css";
 
 /**
- * Hallmark · editorial "Section 01/02" statement.
+ * Hallmark · editorial statement.
  *
  * Dark-bg two-column layout that sits after the Brands section. Left
- * column carries pagination + a stat block; right column carries the
- * big editorial copy; bottom-right holds the byline.
+ * column carries a stat block; right column carries the big editorial
+ * copy; bottom-right holds the byline.
  */
 
 interface StatementProps {
-  /** Pagination numerator shown next to the arrows (e.g. "01" out of "02"). */
-  current?: string;
-  /** Pagination denominator. */
-  total?: string;
   /** The big numeric stat (e.g. "15+"). */
   stat?: string;
   /** Caption under the stat — what the number counts. */
@@ -32,8 +28,6 @@ interface StatementProps {
 }
 
 export function Statement({
-  current = "01",
-  total = "02",
   stat = "15+",
   statCaption = "Founder-led brands from disruptive creative agencies to consumer brands",
   paragraphs = [
@@ -97,56 +91,6 @@ export function Statement({
     <section className="statement" id="statement">
       <div className="statement__inner">
         <div className="statement__left-column">
-          {/* Top-left: pagination nav */}
-          <nav className="statement__pager" aria-label="Section navigation">
-            <div className="statement__arrows">
-              <button
-                type="button"
-                className="statement__arrow"
-                aria-label="Previous section"
-                disabled
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <line x1="20" y1="12" x2="4" y2="12" />
-                  <polyline points="10 18 4 12 10 6" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                className="statement__arrow"
-                aria-label="Next section"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <line x1="4" y1="12" x2="20" y2="12" />
-                  <polyline points="14 6 20 12 14 18" />
-                </svg>
-              </button>
-            </div>
-            <span className="statement__pager-count" aria-hidden="true">
-              {current}/{total}
-            </span>
-          </nav>
-
           {/* Left column: stat block */}
           <div className="statement__left">
             <div className="statement__stat">{stat}</div>

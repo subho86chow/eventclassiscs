@@ -5,13 +5,8 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  type ReactNode,
 } from "react";
 import "./Services.css";
-
-// Unused — kept around in case row-aligned re-introduction is wanted.
-// (Referenced via `useRef` only; the import satisfies strict TS but the
-// variable could be removed without runtime impact.)
 
 /**
  * Hallmark · "What we can help with" / testimonials section.
@@ -87,9 +82,8 @@ export function Services() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  /* Refs for each services row (kept for any future row-aligned effect;
-   * the image column itself is now in normal grid flow). */
   const itemRefs = useRef<Array<HTMLLIElement | null>>([]);
+  const imageColRef = useRef<HTMLDivElement>(null);
 
   /* Carousel — advances every 15 s. Skipped under prefers-reduced-motion.
    * The progress bar is a CSS animation that runs in lock-step (see
@@ -119,9 +113,41 @@ export function Services() {
     bar.style.animation = "";
   }, [activeIndex]);
 
-  /* The image column always shows a tile — either the hovered service's
-   * gradient or a "hover a service" placeholder. */
-  const hoverImage = hoveredIndex !== null ? SERVICES[hoveredIndex] : null;
+  /* Keep the floating image centred on the active service row. offsetTop is
+   * layout-based, so an existing transform never feeds back into the next
+   * measurement. ResizeObserver keeps the alignment correct after a font or
+   * viewport resize without running work on every pointer move. */
+  useLayoutEffect(() => {
+    const imageCol = imageColRef.current;
+    if (!imageCol) return;
+
+    const alignImage = () => {
+      if (hoveredIndex === null) {
+        imageCol.style.setProperty("--services-image-y", "0px");
+        return;
+      }
+
+      const item = itemRefs.current[hoveredIndex];
+      if (!item) return;
+
+      const y =
+        item.offsetTop +
+        item.offsetHeight / 2 -
+        imageCol.offsetTop -
+        imageCol.offsetHeight / 2;
+
+      imageCol.style.setProperty("--services-image-y", `${y}px`);
+    };
+
+    alignImage();
+
+    const observer = new ResizeObserver(alignImage);
+    observer.observe(imageCol);
+    const item = hoveredIndex === null ? null : itemRefs.current[hoveredIndex];
+    if (item) observer.observe(item);
+
+    return () => observer.disconnect();
+  }, [hoveredIndex]);
 
   return (
     <section className="services" id="services">
@@ -243,27 +269,23 @@ export function Services() {
           </ul>
         </div>
 
-        {/* ───── Col 3 — image (always visible; updates with hover) ───── */}
-        <div className="services__image-col" aria-hidden="true">
-          {hoverImage ? (
+        {/* ───── Col 3 — image aligned to the hovered service ───── */}
+        <div ref={imageColRef} className="services__image-col" aria-hidden="true">
+          {SERVICES.map((service, i) => (
             <div
-              key={hoveredIndex}
-              className="services__hover-image"
+              key={service.name}
+              className={`services__hover-image ${
+                hoveredIndex === i ? "services__hover-image--active" : ""
+              }`}
               style={{
-                background: `linear-gradient(135deg, ${hoverImage.imageFrom}, ${hoverImage.imageTo})`,
+                background: `linear-gradient(135deg, ${service.imageFrom}, ${service.imageTo})`,
               }}
             >
               <span className="services__hover-image-label">
-                {hoverImage.imageLabel}
+                {service.imageLabel}
               </span>
             </div>
-          ) : (
-            <div className="services__hover-image services__hover-image--placeholder">
-              <span className="services__hover-image-label">
-                Hover a service
-              </span>
-            </div>
-          )}
+          ))}
         </div>
       </div>
     </section>

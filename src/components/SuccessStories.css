@@ -19,18 +19,11 @@
  * section's own stable 100lvh footprint. Once the animation ends,
  * that last footprint is otherwise seen as a full blank viewport. Apply
  * the overlap only after GSAP has created the spacer, avoiding any
- * pre-hydration overlap, and keep the first content within 10svh. */
+ * pre-hydration overlap, and give the first content a restrained inset. */
 .pin-spacer + .success-stories {
   margin-block-start: -100vh;
   margin-block-start: -100lvh;
-  padding-block-start: min(clamp(4rem, 8vw, 8rem), 10svh);
-}
-
-@media (max-width: 768px) {
-  .pin-spacer + .success-stories {
-    /* Stable across mobile browser chrome changes. */
-    padding-block-start: clamp(8svh, 4rem, 20svh);
-  }
+  padding-block-start: 12svh;
 }
 
 .success-stories__inner {
@@ -119,18 +112,21 @@
 }
 
 .success-stories__dot {
-  display: inline-block;
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 0.625rem;
+  height: 0.625rem;
+  flex-shrink: 0;
   border-radius: 50%;
   background: var(--ink);
-  flex-shrink: 0;
+  mix-blend-mode: normal;
 }
 
 .success-stories__label {
   font-family: var(--font-sans);
-  font-size: 0.9375rem;
-  letter-spacing: -0.005em;
+  font-size: clamp(0.9375rem, 1.25vw, 1.125rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  mix-blend-mode: normal;
 }
 
 /* ---------- Divider row (between projects, cols 2–3 only) ---------- */

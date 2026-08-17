@@ -1,7 +1,6 @@
-/* Hallmark · editorial "Section 01/02" statement.
- * Dark canvas, two-column layout: narrow left column for the pagination
- * arrow + 15+ stat, wide right column for the big editorial copy,
- * bottom-right byline.
+/* Hallmark · editorial statement.
+ * Dark canvas, two-column layout: narrow left column for the stat,
+ * wide right column for the big editorial copy, bottom-right byline.
  */
 
 .statement {
@@ -22,7 +21,7 @@
   grid-template-areas:
     "left-column right"
     ".      byline";
-  row-gap: clamp(2rem, 5vw, 4rem);
+  row-gap: clamp(1rem, 2vw, 1.5rem);
   column-gap: clamp(2rem, 5vw, 5rem);
 }
 
@@ -42,50 +41,6 @@
   display: flex;
   flex-direction: column;
   gap: clamp(1.5rem, 3vw, 2.5rem);
-}
-
-/* ---------- Pager (top-left) ---------- */
-
-.statement__pager {
-  display: flex;
-  align-items: center;
-  gap: clamp(0.75rem, 2vw, 1.25rem);
-}
-
-.statement__arrows {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2xs);
-}
-
-.statement__arrow {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-
-  background: transparent;
-  /* Colour + invert inherited from globals.css. */
-  border: 0;
-  border-radius: 2px;
-  cursor: pointer;
-
-  transition: background-color var(--dur-fast) var(--ease-out);
-}
-
-.statement__arrow:hover:not(:disabled) {
-  background: color-mix(in oklch, var(--paper) 12%, transparent);
-}
-
-.statement__arrow:disabled {
-  cursor: not-allowed;
-}
-
-.statement__pager-count {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
 }
 
 /* ---------- Stat block (left column) ---------- */
@@ -182,7 +137,7 @@
    * avatar initial legible. */
   color: var(--paper);
 
-  padding-top: clamp(2rem, 5vw, 4rem);
+  padding-top: 0;
 }
 
 .statement__avatar {
