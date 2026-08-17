@@ -29,7 +29,7 @@ export function Brands() {
       <div className="brands__layout">
         <header className="brands__header">
           <span className="brands__dot" aria-hidden="true" />
-          <span className="brands__label">Brands we&apos;ve helped</span>
+          <span className="brands__label">Trusted by</span>
         </header>
 
         <div className="brands__grid">

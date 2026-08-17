@@ -40,7 +40,35 @@
 .footer__nav-col {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: clamp(1.5rem, 2.5vw, 2rem);
+}
+
+/* Brand block — sits above the nav list. Compact lowercase
+ * "eventclassics.in" wordmark + a single subdued tagline. Lives in
+ * the nav column so it reads as the first thing the eye lands on in
+ * the footer. Kept small + quiet so the nav list dominates. */
+.footer__brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: clamp(0.5rem, 1vw, 0.75rem);
+}
+
+.footer__brand-name {
+  font-family: var(--font-display, var(--font-sans));
+  color: var(--paper);
+  font-size: clamp(0.8125rem, 0.95vw, 0.9375rem);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.footer__brand-tagline {
+  color: color-mix(in oklch, var(--paper) 55%, transparent);
+  font-family: var(--font-sans);
+  font-size: clamp(0.75rem, 0.85vw, 0.8125rem);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: 0.005em;
 }
 
 .footer__nav-list {
@@ -294,7 +322,7 @@
 .footer__copyright {
   width: 100%;
   max-width: 90rem;
-  margin: clamp(0.5rem, 1vw, 0.75rem) auto 0;
+  margin: clamp(0.4rem, 0.75vw, 0.6rem) auto 0;
   padding-inline: clamp(var(--space-md), 5vw, var(--space-2xl));
   color: color-mix(in oklch, var(--paper) 60%, transparent);
   mix-blend-mode: normal;

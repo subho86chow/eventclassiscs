@@ -36,39 +36,35 @@ const DESKTOP_VIDEO_HOVER =
 
 const PROJECTS: ReadonlyArray<Project> = [
   {
-    title: "OH Architecture",
+    title: "IQVIA",
     description:
-      "Brand refresh and website for a practice with a decade of crafting high-end homes for Australian families.",
-    stat: "21%",
-    statCaption:
-      "Increase in conversions with projects starting from $2M+",
+      "IQVIA didn't need another efficiency promise. It needed systems that worked around the business. We built customized CRM and ERP solutions around real workflows — supported by strategic and technology-led frameworks designed to reduce friction across teams.",
+    stat: "—",
+    statCaption: "Making complex workflow better.",
     image: "/services.png",
   },
   {
-    title: "Lighthouse Studios",
+    title: "Manipal Hospitals",
     description:
-      "Brand identity and event microsite for an independent film studio launching its first feature-length documentary.",
-    stat: "3.4×",
-    statCaption:
-      "Increase in inbound enquiries during the film's festival run",
+      "Healthcare is full of information. But people don't remember information — they remember how a brand made them feel. We shaped storytelling, branding campaigns and strategic communication around a clearer idea of trust — making the brand more human, recognizable and relevant to the people it serves.",
+    stat: "—",
+    statCaption: "Making trust easier to feel.",
     image: "/services.png",
   },
   {
-    title: "Halcyon Events",
+    title: "Redmonk Wellness",
     description:
-      "Brand system, website, and on-site signage programme for a boutique event studio launching its first hotel residency.",
-    stat: "47%",
-    statCaption:
-      "Lift in direct booking conversions in the first quarter post-launch",
+      "Wellness brands don't need more content. They need content that feels worth stopping for. We built a sharper content approach around short, crisp and raw communication — designed for the way people actually consume information today.",
+    stat: "—",
+    statCaption: "Turning attention into action.",
     image: "/services.png",
   },
   {
-    title: "Verdant Group",
+    title: "Team Taurus",
     description:
-      "End-to-end brand and digital identity for a sustainability consultancy entering its first public-funding round.",
-    stat: "1.8×",
-    statCaption:
-      "Increase in qualified investor meetings booked in the first 60 days",
+      "Real estate is often reduced to location, price and square feet. People don't buy spaces like spreadsheets. They imagine what it will feel like to live there. We helped sharpen the brand narrative around the experience behind the spaces — making the communication more distinctive, considered and relevant to the people it was built for.",
+    stat: "—",
+    statCaption: "Spaces that feel lived in.",
     image: "/services.png",
   },
 ];

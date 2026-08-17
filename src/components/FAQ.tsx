@@ -25,39 +25,43 @@ interface FAQItem {
 
 const FAQS: ReadonlyArray<FAQItem> = [
   {
-    question: "Who will actually be working on our project?",
+    question: "Who actually works on our project?",
     answer:
-      "A small senior team from start to ship. The people scoping your work in the first call are the same people building it — no bait-and-switch.",
+      "A small senior team. The people who work are the people who build it.",
   },
   {
-    question: "How long do your projects usually take?",
+    question: "How long does the work take?",
     answer:
-      "Brand work runs 4–6 weeks. A full site is 8–12 weeks. Anything larger we scope in phases so you ship value early and keep learning.",
+      "Brand work typically takes 4–6 weeks. Larger brand-and-digital engagements run 8–12 weeks. Bigger problems are scoped in phases. You start seeing progress before everything is executed.",
   },
   {
-    question: "How do you communicate and manage work?",
+    question: "How do you work with client teams?",
     answer:
-      "Weekly working sessions + async Looms + a shared Notion board. You always know what's shipping, what's blocked, and what's next — no Friday-afternoon status-deck surprises.",
+      "Weekly working sessions. Synchronized communication. You always know what's happening, what's blocked and what needs to be done next.",
   },
   {
-    question: "What do you need to start working together?",
+    question: "What do you need from us?",
     answer:
-      "Either a clear written brief or a 60-minute scoping call. By the end of the first week you'll know exactly what we're building, when, and for how much.",
+      "A clear brief or one honest conversation. We'll ask the questions from there. By the end of the first week, the direction, scope and next steps should be clear.",
   },
   {
-    question: "What happens after launch?",
-    answer:
-      "30 days of in-warranty fixes are included. After that you can roll into a quarterly retainer for ongoing growth work — analytics, experiments, new pages — or hand it back to your in-house team with full documentation.",
+    question: "Do you only provide strategy?",
+    answer: "No. We build it, execute it, measure it and improve it.",
   },
   {
-    question: "Can you handle branding, design and development?",
+    question: "Can you work with our existing team?",
     answer:
-      "All under one roof — strategy, identity, site, 3D, motion. One team, one point of contact, one shared Notion. No handoffs, no translation tax.",
+      "Yes. We can work alongside founders, internal teams and existing partners. The objective isn't to replace people. It's to make the whole system work better together.",
   },
   {
-    question: "What is the project investment?",
+    question: "What happens after the project?",
     answer:
-      "Brand work starts at $30k, full sites at $60k. Final scope sets the final number — we lock the budget before week two and don't issue surprise change orders.",
+      "We can stay. For growth, optimization, content, new initiatives or ongoing strategic support. Or we can hand everything over with the systems and documentation your team needs. Either way, the work should continue working.",
+  },
+  {
+    question: "How much does it cost?",
+    answer:
+      "Every business starts from a different problem. So we scope the problem before pricing the solution. No packaged work for the sake of a package. No surprise scope.",
   },
 ];
 
@@ -85,7 +89,7 @@ export function FAQ() {
 
           <div className="faq__cta">
             <h3 className="faq__cta-heading">
-              Got more questions?
+              Still have questions?
               <br />
               Chat with us
             </h3>
@@ -114,7 +118,7 @@ export function FAQ() {
         {/* ───── Col 2 — headline + accordion ───── */}
         <div className="faq__right">
           <h2 className="faq__headline">
-            Here&apos;s what you need to consider before partnering with us.
+            Here&apos;s what you should know before working with us.
           </h2>
 
           <ul className="faq__list">

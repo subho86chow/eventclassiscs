@@ -44,8 +44,8 @@ const DEFAULT_LINKS = [
 export function MonologHero({
   brand = "eventclassics.in",
   navLinks = DEFAULT_LINKS,
-  para1 = "We design change-making website experiences for brands whose reputation has outgrown their digital presence.",
-  cta = { label: "Start a project", href: "#start" },
+  para1 = "Idea to Impact\n\nPROCESS. PRECISION. PERFORMANCE.",
+  cta = { label: "Let's close the gap", href: "#final-cta" },
 }: MonologHeroProps) {
   const reduce = useReducedMotion() ?? false;
 
@@ -85,7 +85,21 @@ export function MonologHero({
             animate={reduce ? undefined : { opacity: 1, y: 0 }}
             transition={{ delay: 0.35, duration: 0.7, ease: "easeInOut" }}
           >
-            {para1}
+            {/* Split para1 on a blank line so callers can pass a
+             * two-line string ("Idea to Impact\n\nPROCESS. PRECISION.
+             * PERFORMANCE.") and have it render as stacked lines with
+             * the right vertical rhythm — see .m-hero__para-line in
+             * MonologHero.css. */}
+            {para1.split("\n\n").map((line, i) => (
+              <span
+                key={i}
+                className={`m-hero__para-line${
+                  i > 0 ? " m-hero__para-line--tagline" : ""
+                }`}
+              >
+                {line}
+              </span>
+            ))}
           </motion.p>
         </div>
 

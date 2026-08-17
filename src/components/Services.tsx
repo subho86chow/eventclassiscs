@@ -17,48 +17,52 @@ import "./Services.css";
 
 interface Service {
   name: string;
+  /** Short tagline that sits between the name and the description. */
+  kicker: string;
   description: string;
-  /** Placeholder image background (used until a real asset lands). */
-  imageFrom: string;
-  imageTo: string;
+  /** Small practice-area tags shown below the description. */
+  subItems: ReadonlyArray<string>;
+  /** Background image served from /public/services/. */
+  image: string;
   imageLabel: string;
 }
 
 const SERVICES: ReadonlyArray<Service> = [
   {
-    name: "Brand Strategy",
-    description: "A clear position, story, and roadmap that gives every brand decision a purpose.",
-    imageFrom: "oklch(35% 0.04 30)",
-    imageTo: "oklch(15% 0.04 20)",
-    imageLabel: "BRAND STRATEGY",
+    name: "Brand Identity & Positioning",
+    kicker: "Be known for something.",
+    description:
+      "Defining what you own, who it matters to and why anyone should choose you.",
+    subItems: ["Research", "Position", "Identity", "Brand System"],
+    image: "/services/brand-identity.png",
+    imageLabel: "BRAND IDENTITY",
   },
   {
-    name: "Visual Identity",
-    description: "A distinctive visual system built to stay recognisable, flexible, and consistent.",
-    imageFrom: "oklch(35% 0.04 90)",
-    imageTo: "oklch(15% 0.04 70)",
-    imageLabel: "VISUAL IDENTITY",
+    name: "Growth Strategy & Market Intelligence",
+    kicker: "Stop guessing.",
+    description:
+      "Turning audience behavior, competitor movements and market signals into decisions you can actually execute.",
+    subItems: ["Research", "Intelligence", "Roadmap", "Execution"],
+    image: "/services/growth-strategy.png",
+    imageLabel: "GROWTH STRATEGY",
   },
   {
-    name: "Website Strategy",
-    description: "A focused digital plan that turns audience needs into a clear, persuasive journey.",
-    imageFrom: "oklch(35% 0.04 200)",
-    imageTo: "oklch(15% 0.04 180)",
-    imageLabel: "WEBSITE STRATEGY",
+    name: "Social Media & Audience Growth",
+    kicker: "Attention is not the goal.",
+    description:
+      "Building content and campaigns that turn attention into audience, audience into action and action into growth.",
+    subItems: ["Content", "Distribution", "Campaigns", "Performance"],
+    image: "/services/social-media.png",
+    imageLabel: "SOCIAL MEDIA",
   },
   {
-    name: "Website Design",
-    description: "Thoughtful interfaces that make complex ideas simple, useful, and memorable.",
-    imageFrom: "oklch(35% 0.04 260)",
-    imageTo: "oklch(15% 0.04 240)",
-    imageLabel: "WEBSITE DESIGN",
-  },
-  {
-    name: "3D Development",
-    description: "Immersive 3D experiences that add depth, motion, and character without sacrificing performance.",
-    imageFrom: "oklch(35% 0.04 60)",
-    imageTo: "oklch(15% 0.04 40)",
-    imageLabel: "3D DEVELOPMENT",
+    name: "Content Creation & Production",
+    kicker: "Short. Crisp. Raw.",
+    description:
+      "Turning strategy into content that feels relevant to the platform and different from everything around it.",
+    subItems: ["Intelligence", "Concept", "Production", "Optimisation"],
+    image: "/services/content-creation.png",
+    imageLabel: "CONTENT CREATION",
   },
 ];
 
@@ -107,9 +111,27 @@ export function Services() {
       <div className="services__inner">
         {/* ───── Col 1 — active service description ───── */}
         <div ref={descriptionColRef} className="services__left">
+          {/* Section-level intro — constant across services, sets the
+           * "we connect, not sell" framing. Lives above the per-service
+           * description block and reads as the section's positioning
+           * statement. */}
+          <p className="services__intro">
+            We don&rsquo;t sell services.
+            <br />
+            We connect the pieces that make a brand work.
+          </p>
+
           <p className="services__description" aria-live="polite">
-            <strong>{SERVICES[selectedService].name}.</strong>{" "}
-            {SERVICES[selectedService].description}
+            <strong>{SERVICES[selectedService].name}.</strong>
+            <em className="services__kicker">
+              {SERVICES[selectedService].kicker}
+            </em>
+            <span className="services__description-body">
+              {SERVICES[selectedService].description}
+            </span>
+            <span className="services__subitems">
+              {SERVICES[selectedService].subItems.join(" · ")}
+            </span>
           </p>
         </div>
 
@@ -158,7 +180,7 @@ export function Services() {
                 selectedService === i ? "services__hover-image--active" : ""
               }`}
               style={{
-                background: `linear-gradient(135deg, ${service.imageFrom}, ${service.imageTo})`,
+                backgroundImage: `url(${service.image})`,
               }}
             >
               <span className="services__hover-image-label">

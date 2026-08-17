@@ -13,21 +13,29 @@ import "./Footer.css";
  */
 
 const NAV_ITEMS: ReadonlyArray<{ label: string; href: string }> = [
-  { label: "Home",      href: "#home" },
-  { label: "About Us",  href: "#about" },
-  { label: "Work",      href: "#success-stories" },
-  { label: "Services",  href: "#services" },
-  { label: "FAQ",       href: "#faq" },
+  { label: "About",    href: "#about" },
+  { label: "Work",     href: "#success-stories" },
+  { label: "Services", href: "#services" },
+  { label: "Process",  href: "#process" },
+  { label: "Resources", href: "#resources" },
+  { label: "Contact",  href: "#contact" },
 ];
 
 const SOCIAL_ITEMS: ReadonlyArray<{ label: string; href: string }> = [
-  { label: "YouTube", href: "https://www.youtube.com/@EventClassics" },
-  { label: "Instagram", href: "https://www.instagram.com/eventclassics.in/" },
-  { label: "X", href: "https://x.com/EventClassicsIN" },
+  { label: "Facebook", href: "https://www.facebook.com/EventClassics" },
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com/eventclassics.in/",
+  },
+  {
+    label: "YouTube",
+    href: "https://www.youtube.com/@EventClassics",
+  },
   {
     label: "LinkedIn",
     href: "https://www.linkedin.com/company/event-classics-in/?viewAsMember=true",
   },
+  { label: "Twitter/X", href: "https://x.com/EventClassicsIN" },
 ];
 
 export function Footer() {
@@ -36,6 +44,16 @@ export function Footer() {
       <div className="footer__inner">
         {/* ───── Nav (left column) ───── */}
         <nav className="footer__nav-col" aria-label="Site navigation">
+          {/* Compact brand: lowercase "eventclassics.in" wordmark sits
+           * above a single subdued line of brand copy. Keeps the
+           * mark small and quiet so the nav list dominates. */}
+          <div className="footer__brand">
+            <div className="footer__brand-name">eventclassics.in</div>
+            <div className="footer__brand-tagline">
+              Build something worth remembering.
+            </div>
+          </div>
+
           <ul className="footer__nav-list">
             {NAV_ITEMS.map((item) => (
               <li key={item.label} className="footer__nav-item">
@@ -48,7 +66,7 @@ export function Footer() {
 
           <a
             className="footer__magnetic-zone"
-            href="mailto:hello@eventclassics.com"
+            href="mailto:event.classics12@gmail.com"
           >
             <span className="footer__talk-link">
               Let&apos;s Talk <span aria-hidden="true">→</span>
@@ -103,16 +121,16 @@ export function Footer() {
 
               <a
                 className="footer__email"
-                href="mailto:hello@eventclassics.com"
+                href="mailto:event.classics12@gmail.com"
               >
                 <span className="footer__email-icon" aria-hidden="true">@</span>
-                <span className="footer__email-text">hello@eventclassics.com</span>
+                <span className="footer__email-text">event.classics12@gmail.com</span>
               </a>
 
               <p className="footer__location">
                 Based in Kolkata, India
                 <br />
-                Working Worldwide.
+                Working worldwide.
               </p>
             </div>
 
@@ -152,7 +170,7 @@ export function Footer() {
       </div>
 
       <p className="footer__copyright">
-        © 2026 eventclassics. All rights reserved.
+        © Event Classics
       </p>
     </footer>
   );

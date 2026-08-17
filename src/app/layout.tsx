@@ -28,9 +28,9 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "eventclassics — Stagecraft for the brands that built the room",
+  title: "EVENTCLASSICS — Idea to Impact",
   description:
-    "We design change-making website experiences that finally reflect what you've actually built.",
+    "Strategic brand-building firm. We close the gap between what you've built and what the market thinks you've built.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

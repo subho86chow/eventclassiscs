@@ -1,5 +1,6 @@
 import { Brands } from "@/components/Brands";
 import { FAQ } from "@/components/FAQ";
+import { FinalCta } from "@/components/FinalCta";
 import { Footer } from "@/components/Footer";
 import { Gap } from "@/components/Gap";
 import { KeepScrolling } from "@/components/KeepScrolling";
@@ -19,6 +20,7 @@ export default function Home() {
       <SuccessStories />
       <Services />
       <FAQ />
+      <FinalCta />
       <Footer />
     </>
   );

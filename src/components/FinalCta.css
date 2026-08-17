@@ -1,0 +1,67 @@
+/* Hallmark · final CTA section.
+ *
+ * Editorial close before the footer. Dark canvas (matches Statement /
+ * FAQ / Footer so the page ends on a single dark block), centred
+ * three-line statement, then the primary CTA pill.
+ *
+ * Re-uses the hero's `.m-hero__cta` class for the button so the
+ * contact affordance is the same component across the page. The pill
+ * inherits its difference-blend behaviour from that class — it
+ * inverts correctly against any background it lands on. */
+
+.final-cta {
+  background: var(--ink);
+  padding-block: var(--section-space);
+}
+
+.final-cta__inner {
+  width: 100%;
+  max-width: 64rem;
+  margin-inline: auto;
+  padding-inline: clamp(var(--space-md), 5vw, var(--space-2xl));
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: clamp(2rem, 4vw, 3rem);
+}
+
+.final-cta__copy {
+  margin: 0;
+  color: var(--paper);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: clamp(1.75rem, 4vw, 3.25rem);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  max-width: 22ch;
+}
+
+.final-cta__line {
+  display: block;
+}
+
+/* Kicker — eyebrow-style label that sits between the editorial copy
+ * and the CTA. Mirrors the eyebrow treatment used elsewhere on the
+ * page (small caps, mono, dimmed). */
+.final-cta__kicker {
+  margin: 0;
+  color: color-mix(in oklch, var(--paper) 55%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* The CTA inherits position / z-index / mix-blend-mode from
+ * `.m-hero__cta`. Inside a fixed-bg dark section we just want it to
+ * sit in flow with a small left-offset so it aligns visually with
+ * the copy. */
+.final-cta__button {
+  position: relative;
+  inset: auto;
+  z-index: 0;
+  transform: none;
+  align-self: center;
+}

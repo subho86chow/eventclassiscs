@@ -28,14 +28,18 @@ interface StatementProps {
 }
 
 export function Statement({
-  stat = "15+",
-  statCaption = "Founder-led brands from disruptive creative agencies to consumer brands",
+  stat = "10+",
+  statCaption = "From disruptive creative businesses to consumer-first companies.",
   paragraphs = [
-    "Great founders changing the world deserve a presence as powerful as what they're building. Most founders we work with have built something significant, but their brand doesn't shows it yet.",
-    "That gap costs more than revenue. It costs the certainty that your brand is finally being understood.",
+    "Great founders don't usually have an ambition problem.",
+    "They have the product. They have the people. They have the proof.",
+    "But somewhere between what they've built and what the market sees, something gets lost.",
+    "The story gets lost. The positioning gets crowded. The brand starts looking smaller than the business behind it.",
+    "Most agencies fix the surface.",
+    "Between what you've built and what the market thinks you've built.",
   ],
   bylineName = "Pamal Mondal",
-  bylineRole = "Founder, eventclassics",
+  bylineRole = "Strategic Brand-Building Firm",
   bylineInitials = "P",
 }: StatementProps) {
   /* Scroll-driven letter-by-letter opacity reveal: every character in the

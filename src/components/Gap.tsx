@@ -50,7 +50,7 @@ interface GapProps {
 }
 
 const DEFAULT_COPY =
-  "Your website is where ideal customers decide if you're worth their time. We take what makes you irreplaceable, shape the entire experience around it, and make sure they feel that before they read another word.";
+  "Between what you've built and what the market thinks you've built.";
 
 /* How much each phrase overflows the viewport edge at the start, as a
  * fraction of viewport width. 8 vw gives a clearly off-screen feel

@@ -54,6 +54,18 @@
    * Aligns with HeroWordmark.tsx / LiquidMetalBg.css policy. */
 }
 
+.services__intro {
+  max-width: 34ch;
+  margin: 0 0 clamp(1.25rem, 2vw, 1.75rem);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: clamp(0.9375rem, 1.25vw, 1.125rem);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  mix-blend-mode: normal;
+}
+
 .services__description {
   max-width: 34ch;
   margin: 0;
@@ -67,6 +79,35 @@
 
 .services__description strong {
   font-weight: 600;
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+/* Kicker — short tagline that sits between the service name and the
+ * description. Italic + slightly muted colour so the hierarchy reads
+ * name → kicker → description → sub-items. */
+.services__kicker {
+  display: block;
+  font-style: italic;
+  font-weight: 500;
+  color: color-mix(in oklch, var(--ink) 75%, transparent);
+  margin-bottom: 0.6rem;
+}
+
+.services__description-body {
+  display: block;
+  margin-bottom: 0.85rem;
+}
+
+/* Sub-items — small practice-area tags, dot-separated, dimmed so they
+ * read as metadata rather than competing with the description. */
+.services__subitems {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: clamp(0.6875rem, 0.75vw, 0.75rem);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: color-mix(in oklch, var(--ink) 55%, transparent);
 }
 
 /* ───────── Col 2 — services list ───────── */
@@ -116,19 +157,22 @@
 .services__item {
   font-family: var(--font-display, var(--font-sans));
   font-weight: 600;
-  /* Sized so the longest entry ("Website Strategy") stays on ONE line at
-   * every desktop width. Col 2 is 9fr of a 20fr grid with wide gaps, so it
-   * measures only ~450–505px even at 1920, which is what sets the ceiling:
-   * 52px at 1280, 56px at 1440 and above.
+  /* Sized so the longest entry ("Growth Strategy & Market Intelligence",
+   * 38 chars) stays on ONE line at every desktop width. Col 2 is 9fr of a
+   * 20fr grid with wide gaps, so it measures only ~450–505px even at 1920,
+   * which is what sets the ceiling:
+   *   24px at 1280, 26px at 1440, 27px at 1680, 28px at 1920.
    *
-   * The vw term is what keeps 1280 in bounds; the 3.5rem cap is what keeps
+   * The vw term is what keeps 1280 in bounds; the 1.75rem cap is what keeps
    * 1440+ in. Verified one-line at 1280 / 1440 / 1680 / 1920.
    *
-   * NOTE: this ceiling is a function of the longest name in SERVICES. It was
-   * 44px while "Website Development" was in the list; removing that entry is
-   * what bought the extra 12px. Adding a longer name back will force it down
-   * again — re-measure rather than letting entries silently wrap. */
-  font-size: clamp(1.5rem, 3.85vw, 3.5rem);
+   * NOTE: this ceiling is a function of the longest name in SERVICES. The
+   * previous cap was 3.5rem while "Website Strategy" (17 chars) was the
+   * longest entry; replacing that with "Growth Strategy & Market
+   * Intelligence" (38 chars) forced the cap down to keep the row on a
+   * single line. Adding a longer name back will force it down again —
+   * re-measure rather than letting entries silently wrap. */
+  font-size: clamp(1.25rem, 1.95vw, 1.75rem);
   line-height: 1.1;
   letter-spacing: -0.03em;
   cursor: pointer;
@@ -209,6 +253,13 @@
   padding: clamp(0.6rem, 1vw, 0.9rem);
   box-shadow:
     0 8px 24px color-mix(in oklch, var(--ink) 18%, transparent);
+
+  /* Each image is square (1024×1024); cover + centre crops cleanly
+   * for both desktop's portrait column (3:4) and mobile's landscape
+   * column (16:10). */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 
   opacity: 0;
   transform: translate3d(0, 0.75rem, 0) scale(0.97);

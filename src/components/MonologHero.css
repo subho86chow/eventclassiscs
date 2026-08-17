@@ -327,7 +327,7 @@
 .m-hero__para {
   font-family: var(--font-sans);
   font-weight: 700;
-  font-size: clamp(1.125rem, 2.4vw, 1.75rem);
+  font-size: clamp(1.25rem, 2.7vw, 2rem);
   line-height: 1.4;
   letter-spacing: -0.02em;
   /* The pitch div is the difference blend group (see .m-hero__pitch);
@@ -342,6 +342,19 @@
    * paragraph invisible on the liquid-metal hero. */
   margin: 0;
   max-width: 36ch;
+}
+
+/* Both lines render with the same font, weight, size, tracking and
+ * colour — they only differ in the source string itself ("Idea to
+ * Impact" vs "PROCESS. PRECISION. PERFORMANCE.", which is already
+ * uppercase in copy). Stacked with a small vertical gap so the two
+ * read as one paragraph + manifesto beat. */
+.m-hero__para-line {
+  display: block;
+}
+
+.m-hero__para-line + .m-hero__para-line {
+  margin-top: 0.55em;
 }
 
 /* ---------- Massive bottom wordmark ---------- */
