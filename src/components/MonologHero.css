@@ -532,6 +532,11 @@
    * backdrop on every frame while GSAP moves this child freely. */
   color: var(--paper);
   mix-blend-mode: normal;
+
+  /* Stabilise the transformed text on mobile GPUs — reduces the
+   * sub-pixel shimmer that makes the wordmark "wiggle" while its
+   * scroll-driven scale/translate runs at medium scroll speed. */
+  backface-visibility: hidden;
 }
 
 .m-hero__wordmark-load {
@@ -560,6 +565,16 @@
 .m-hero__wordmark-letter--active {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Once the entry stagger completes, clear the per-letter transform so the
+ * whole wordmark is a single rasterized text run. The retained
+ * translateY(0) on every letter otherwise leaves ~N transformed
+ * inline-block layers that shimmer under the parent's force3D scale
+ * during scroll. Mirrors the reduced-motion end-state below. */
+.m-hero__wordmark-letter--settled {
+  transform: none;
+  transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

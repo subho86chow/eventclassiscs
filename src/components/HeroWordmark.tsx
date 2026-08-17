@@ -93,11 +93,25 @@ interface HeroWordmarkProps {
 export function HeroWordmark({ text }: HeroWordmarkProps) {
   const wordmarkRef = useRef<HTMLDivElement>(null);
   const [isActive, setIsActive] = useState(false);
+  const [settled, setSettled] = useState(false);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setIsActive(true));
     return () => cancelAnimationFrame(frame);
   }, []);
+
+  /* Once the letter-stagger entry finishes, drop the per-letter
+   * transform/transition so the wordmark is a single rasterized text run
+   * again. The retained `translateY(0)` on every letter otherwise leaves
+   * ~N transformed inline-block layers, which shimmer under the parent's
+   * force3D scale during scroll. Reduced-motion reaches the same
+   * end-state via CSS. */
+  useEffect(() => {
+    if (!isActive) return;
+    const settleMs = text.length * 20 + 250;
+    const timer = setTimeout(() => setSettled(true), settleMs);
+    return () => clearTimeout(timer);
+  }, [isActive, text]);
 
   useEffect(() => {
     const wordmark = wordmarkRef.current;
@@ -300,7 +314,7 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
           <span
             key={`${character}-${index}`}
             aria-hidden="true"
-            className={`m-hero__wordmark-letter${isActive ? " m-hero__wordmark-letter--active" : ""}`}
+            className={`m-hero__wordmark-letter${isActive ? " m-hero__wordmark-letter--active" : ""}${settled ? " m-hero__wordmark-letter--settled" : ""}`}
             style={{ transitionDelay: isActive ? `${index * 20}ms` : "0ms" }}
           >
             {character === " " ? "\u00a0" : character}
