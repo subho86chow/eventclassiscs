@@ -10,7 +10,7 @@
   z-index: 10;
 
   min-height: 100vh;
-  min-height: 100dvh;
+  min-height: 100svh;
 
   display: grid;
   grid-template-rows: auto 1fr auto;
@@ -275,7 +275,7 @@
   /* Push the paragraphs down off dead-centre — the flex centring keeps
    * them centred inside the padded content box, so this shifts the
    * whole group down by half the padding. */
-  padding-top: clamp(8rem, 17vh, 17rem);
+  padding-top: clamp(8rem, 17svh, 17rem);
 
   /* Global invert from globals.css applies (color: #ffffff,
    * mix-blend-mode: difference). Children (mic icon, two paragraphs)
@@ -457,19 +457,11 @@
     * only promotes the layer once a 3D transform is detected — and that
     * detection can cause a one-frame paint on first scroll.
     *
-    * Anchored in `dvh` (not `vh`) so the mobile hero stack — wordmark,
-    * pitch and CTA — shares ONE coordinate space with the hero's
-    * `min-height: 100dvh`. `vh` is the *large* viewport on Chrome
-    * Android and iOS Safari (URL bar hidden); `dvh` tracks the bar. A
-    * vh-anchored wordmark under a dvh-anchored hero collapses the
-    * mobile gaps whenever the URL bar is visible — the pitch/CTA/wordmark
-    * crowd together (the "cluttered hero" bug). On desktop dvh == vh, so
-    * this is a no-op there. GSAP's HeroWordmark tween reads
-    * window.innerHeight (the visual viewport, i.e. dvh-space), so the
-    * animation and the CSS first paint stay in lockstep. */
+    * `svh` deliberately uses the stable small viewport. Unlike `dvh`, it
+    * does not resize this anchor while mobile browser chrome retracts. */
   transform: translate3d(
     calc(50vw - 50%),
-    calc(100dvh - 100% - 5vw),
+    calc(100svh - 100% - 5vw),
     0
   );
 
@@ -544,13 +536,13 @@
  * GPU layer promotion (see the long comment on the base transform
  * above). The variable itself is still updated so the GSAP set() in
  * HeroWordmark.tsx reads the matching per-breakpoint value via
- * getComputedStyle. (dvh, not vh — see the base transform's comment.) */
+ * getComputedStyle. */
 @media (min-width: 769px) {
   .m-hero__wordmark-display {
     --wordmark-bottom-offset: 2.5vw;
     transform: translate3d(
       calc(50vw - 50%),
-      calc(100dvh - 100% - 2.5vw),
+      calc(100svh - 100% - 2.5vw),
       0
     );
   }
@@ -571,10 +563,10 @@
     display: none;
   }
 
-  /* ----- Mobile pitch: park the paragraph 15vh above the wordmark -----
+  /* ----- Mobile pitch: stable spacing above the wordmark -----
    *
    * Anchored from the BOTTOM rather than pushed down with padding-top, so
-   * the 15vh is measured to the paragraph's last line no matter how many
+   * the capped gap is measured to the paragraph's last line no matter how many
    * lines it wraps to. A top-anchored version drifts by a whole line
    * between a 360px and a 430px phone.
    *
@@ -585,51 +577,47 @@
    * here too. Declared on :root because the CTA below needs it as well and
    * is not a descendant of the pitch.
    *
-   * Everything in this stack is anchored in `dvh` — the hero is
-   * min-height: 100dvh, and the wordmark + CTA use dvh transforms/tops
-   * (see above) — so the gaps hold in EVERY URL-bar state. The old
-   * `calc(100dvh - 100vh + …)` reconciliation term is gone: on Chrome
-   * Android / iOS Safari `vh` is the LARGE viewport, so that term went
-   * NEGATIVE while the URL bar was visible and the pitch collapsed down
-   * onto the wordmark (the "cluttered hero"). With a single unit system
-   * the term is always zero. */
+   * `svh` is stable while mobile browser chrome opens and closes. The
+   * ordinary content gaps are capped in rem so they do not breathe with
+   * the viewport during a scroll. */
   :root {
     --wordmark-stack: calc(0.6 * clamp(4rem, 16.5vw, 30rem) + 5vw);
+    --hero-copy-gap: clamp(6rem, 15svh, 8rem);
+    --hero-cta-gap: 1rem;
   }
 
   .m-hero__pitch {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: calc(var(--wordmark-stack) + 15dvh);
+    bottom: calc(var(--wordmark-stack) + var(--hero-copy-gap));
 
     /* Replaced by the bottom anchor above. */
     padding-top: 0;
     margin-inline: auto;
   }
 
-  /* CTA sits 2vh below the paragraph's last line.
+  /* CTA sits one stable spacing unit below the paragraph's last line.
    *
    * It stays a body-level sibling (see MonologHero.tsx) rather than moving
    * inside the pitch, because nesting it under .m-hero would trap its
    * z-index: 200 inside that section's z-index: 10 stacking context — the
    * nav and pinned section visuals would then paint over the pill and
-   * swallow its clicks. So instead of `top: calc(100% + 2vh)` relative to
+   * swallow its clicks. So instead of positioning it relative to
    * the pitch, the offset is recomputed against the viewport.
    *
-   * The pitch's bottom edge sits at `100dvh - stack - 15dvh` from the top
-   * of the hero, and the hero starts at the document origin, so adding the
-   * 2dvh gives `100dvh - stack - 13dvh`. This holds regardless of how the
-   * paragraph wraps, because the pitch is bottom-anchored above. (dvh —
-   * not vh — so the pill stays 2dvh under the paragraph in every URL-bar
-   * state; see the pitch comment.)
+   * The top position uses the same stable variables as the pitch, so the
+   * two cannot drift apart when browser chrome changes.
    *
    * `absolute`, not `fixed`: the pill has to scroll away with the hero. A
    * fixed pill would hang in the middle of the viewport over every section
    * below. */
   .m-hero__cta {
     position: absolute;
-    top: calc(100dvh - var(--wordmark-stack) - 13dvh);
+    top: calc(
+      100svh - var(--wordmark-stack) - var(--hero-copy-gap) +
+        var(--hero-cta-gap)
+    );
     left: 50%;
     right: auto;
     transform: translateX(-50%);

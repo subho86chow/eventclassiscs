@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Archivo, Bricolage_Grotesque, Source_Sans_3 } from "next/font/google";
+import { SmoothScroll } from "@/components/SmoothScroll";
+import "lenis/dist/lenis.css";
 import "./globals.css";
 
 /* Primary type — all main UI text (nav, headings, body, buttons). */
@@ -38,7 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${bricolage.variable} ${archivo.variable} ${sourceSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col text-foreground">
-        {children}
+        <SmoothScroll>{children}</SmoothScroll>
       </body>
     </html>
   );

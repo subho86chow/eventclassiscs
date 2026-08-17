@@ -6,12 +6,6 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./Gap.css";
 
-/* Adaptive frame-rate handling — if the gap between rAF ticks exceeds
- * 500 ms we assume a tab-switch and stop compensating; gaps under
- * 33 ms are ignored as noise. Keeps the closure animation smooth
- * across heavy GC pauses or backgrounded tabs. */
-gsap.ticker.lagSmoothing(500, 33);
-
 /**
  * Hallmark · "We close that gap" section.
  *
@@ -173,12 +167,17 @@ export function Gap({ copy = DEFAULT_COPY }: GapProps) {
 
     setupAnimation();
 
-    /* rAF-debounced resize — collapse bursts of resize events to a
-     * single re-measurement per frame. */
+    /* Rebuild only for real width/orientation changes. Mobile browser
+     * chrome fires height-only resize events while scrolling; rebuilding a
+     * ScrollTrigger during that gesture is the visible layout jump. */
+    let lastWidth = window.innerWidth;
     const handleResize = () => {
       if (resizeRaf) cancelAnimationFrame(resizeRaf);
       resizeRaf = requestAnimationFrame(() => {
-        setupAnimation();
+        if (window.innerWidth !== lastWidth) {
+          lastWidth = window.innerWidth;
+          setupAnimation();
+        }
         resizeRaf = 0;
       });
     };

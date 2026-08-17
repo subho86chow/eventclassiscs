@@ -5,12 +5,6 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./KeepScrolling.css";
 
-/* Adaptive frame-rate handling — shared across all components that use
- * GSAP. If the gap between rAF ticks exceeds 500 ms we assume a
- * tab-switch and stop compensating (don't fast-forward on tab return).
- * Gaps under 33 ms are ignored as noise. */
-gsap.ticker.lagSmoothing(500, 33);
-
 /**
  * Hallmark · "Keep scrolling" kicker section.
  *
@@ -374,8 +368,8 @@ export function KeepScrolling() {
       };
 
       /* The handoff distances are added after the original animation, so
-       * none of its beats are compressed: mobile keeps its full 200dvh and
-       * then blends for 16dvh; desktop keeps 300dvh and blends for 15dvh. */
+       * none of its beats are compressed. The pinned stage itself uses the
+       * stable large viewport and does not resize under mobile browser UI. */
       mm.add("(max-width: 768px)", () => {
         buildStage({
           pinEnd: "+=216%",

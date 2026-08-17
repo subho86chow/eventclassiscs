@@ -51,27 +51,9 @@ if (typeof window !== "undefined") {
  *
  * Coordinate-system contract (mobile scroll-stability fix):
  *
- *   The CSS transform on .m-hero__wordmark-display uses `dvh`
- *   (translate3d(50vw - 50%, 100dvh - 100% - 5vw, 0)), so the initial
- *   position tracks the mobile URL-bar state LIVE. We read that live
- *   position via getBoundingClientRect() at setup and align GSAP's
- *   transform with it (gsap.set) — no innerHeight snapshot, no risk
- *   of CSS and JS disagreeing when the URL bar collapses/expands
- *   mid-scroll.
- *
- *   The tween then animates the delta from that anchor to the sticky
- *   header corner. Both endpoints shift by the SAME amount under a
- *   URL-bar change, so the deltas are invariant and the setup-time
- *   snapshot stays correct for the tween's lifetime. That's why
- *   `ignoreMobileResize: true` + a width-only resize handler still
- *   give correct layout when the bar moves mid-scroll.
- *
- *   Previous version (pre-fix) snapshotted window.innerHeight at
- *   setup and computed the start position in JS. On mobile, the URL
- *   bar collapses as the user scrolls; CSS `dvh` shifted but JS's
- *   snapshotted position did not — so the wordmark drifted relative
- *   to the pitch and CTA by ~40–60 px during the scroll, breaking
- *   the visual rhythm of the mobile hero.
+ *   The CSS transform uses the stable small viewport (`svh`), so mobile
+ *   browser chrome can open or close without moving the initial anchor.
+ *   We read that position once and rebuild only when viewport width changes.
  *
  * Smoothness tuning (the difference between "feels good" and "jittery"):
  *   • `force3D: true` on both set and to — keeps the element on its own
@@ -90,9 +72,8 @@ if (typeof window !== "undefined") {
  *     layer creation and eat up memory/GPU bandwidth." `force3D: true`
  *     already promotes the element for the duration of the tween, so
  *     a permanent will-change hint is redundant overhead.
- *   • `gsap.ticker.lagSmoothing()` configured once — if the browser
- *     drops a frame (tab in background, heavy GC, etc.), GSAP catches
- *     up smoothly instead of letting the animation freeze-and-jump.
+ *   • The root SmoothScroll controller owns GSAP's ticker so Lenis and
+ *     every ScrollTrigger update on the same frame.
  *   • Measurements are read once during setup (not on every frame) and
  *     the result is baked into the tween's static values.
  *   • Resize handler is rAF-debounced so bursts collapse to one
@@ -105,11 +86,6 @@ const HEADER_PAD_X_FALLBACK = 20; // px — fallback if nav padding can't be rea
 const HEADER_PAD_Y_FALLBACK = 16; // px — fallback if nav padding can't be read
 const TARGET_FONT_SIZE = 24; // px — final wordmark size (≈ header-logo scale)
 const BLUR_OVERSCAN = 12; // px — keeps the initial filter bloom inside the blend group
-
-// Adaptive frame-rate handling. If the gap between rAF ticks exceeds
-// 500 ms we assume a tab-switch and stop compensating (don't fast-forward
-// the wordmark on tab return). Gaps under 33 ms are ignored as noise.
-gsap.ticker.lagSmoothing(500, 33);
 
 interface HeroWordmarkProps {
   text: string;
@@ -169,16 +145,13 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
       // Initial visual position: bottom-centre of viewport, with 5 vw
       // of breathing room below the glyph row on mobile, 2.5 vw on
       // desktop / tablet. The transform ITSELF is owned by CSS
-      // (translate3d(50vw - 50%, 100dvh - 100% - 5vw, 0) on mobile;
+      // (translate3d(50vw - 50%, 100svh - 100% - 5vw, 0) on mobile;
       // overridden per-breakpoint in MonologHero.css) — we read that
       // live CSS-anchored position via getBoundingClientRect() and
       // align GSAP's transform with it. The handoff from CSS to JS is
-      // seamless (no flicker on mount), AND because the CSS anchor
-      // uses `dvh`, the wordmark stays in lockstep with .m-hero__pitch
-      // / .m-hero__cta (also dvh-anchored) when the mobile URL bar
-      // collapses mid-scroll. No innerHeight snapshot needed in JS:
-      // getBoundingClientRect() already reflects the dvh-driven CSS
-      // position at the moment we read it.
+      // seamless (no flicker on mount). The svh anchor is stable during
+      // mobile browser chrome changes, so there is no height snapshot to
+      // reconcile during scrolling.
       //
       // force3D: true pins translate3d() so the compositor keeps this
       // element on its own GPU layer for the entire animation.
@@ -230,7 +203,7 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
         const w = wordmark.offsetWidth;
         const h = wordmark.offsetHeight;
         // Start bounds are the wordmark's actual rendered rect (which is
-        // wherever the dvh-anchored CSS transform put it), NOT a JS
+        // wherever the svh-anchored CSS transform put it), NOT a JS
         // snapshot of viewportHeight from setup. End bounds are the
         // header corner. Both are invariant under URL-bar changes once
         // GSAP takes over the transform (the wordmark doesn't drift
@@ -252,86 +225,6 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
       };
       sizeBlendGroup();
 
-      // Snapshot the CTA's `top` so it stays locked at its setup-time
-      // position even when the mobile URL bar collapses or expands
-      // mid-scroll. The CTA's CSS uses `dvh` for `top`
-      // (calc(100dvh - var(--wordmark-stack) - 13dvh)), so it would
-      // normally recompute every time the bar state changes — while
-      // the GSAP-controlled wordmark stays put. That drift is the
-      // "gap jitter when stopping scroll mid-hero" symptom.
-      //
-      // Reading getComputedStyle(cta).top returns the CSS-evaluated
-      // px value at this moment (in document coords — the CTA is
-      // position: absolute with no positioned ancestor). Setting
-      // cta.style.top overrides the CSS rule with an inline px value,
-      // locking the CTA until the next setupAnimation() — which fires
-      // on width resize, the same time the CSS media query may swap
-      // between the mobile (position: absolute) and desktop
-      // (position: fixed) rules, so the snapshot stays consistent
-      // with whichever CSS rule is active.
-      //
-      // Desktop (position: fixed) doesn't have this issue — the CTA
-      // lives in viewport coords there and doesn't drift with the URL
-      // bar in the same way — so we skip the snapshot on desktop.
-      const cta = document.querySelector<HTMLElement>(".m-hero__cta");
-      if (cta) {
-        const ctaStyle = getComputedStyle(cta);
-        if (ctaStyle.position === "absolute") {
-          const ctaTopPx = parseFloat(ctaStyle.top);
-          if (isFinite(ctaTopPx)) {
-            cta.style.top = `${ctaTopPx}px`;
-          }
-        }
-      }
-
-      // Lock the hero's min-height at setup time so it doesn't grow
-      // with `dvh`. Without this, the hero's `min-height: 100dvh`
-      // grows when the URL bar collapses (dvh grows), dragging the
-      // pitch (which is anchored to the hero's bottom) down by ~85 px
-      // per 100 px dvh delta. With the hero height locked AND the
-      // pitch's `bottom` snapshotted (below), the pitch's document
-      // position is also fixed, and the pitch↔CTA gap is constant.
-      //
-      // Side effect: when dvh grows beyond the locked value (e.g.,
-      // URL bar collapses on mobile), the hero no longer expands to
-      // fill the taller viewport — the next section becomes visible
-      // at the bottom of the hero earlier than before. This is a
-      // subtle visual change compared to the pre-fix behaviour, but
-      // it's necessary to keep the pitch↔CTA gap stable across
-      // URL-bar state changes (otherwise the gap drifts by ~85 px
-      // per 100 px dvh delta, which is far more visible than the
-      // hero-height trade-off).
-      const heroEl = document.querySelector<HTMLElement>(".m-hero");
-      if (heroEl) {
-        const heroHeightPx = heroEl.getBoundingClientRect().height;
-        if (isFinite(heroHeightPx) && heroHeightPx > 0) {
-          heroEl.style.minHeight = `${heroHeightPx}px`;
-        }
-      }
-
-      // Snapshot the pitch's `bottom` so it stays locked at its
-      // setup-time distance from the hero's bottom (in px). With the
-      // hero's height locked above, a fixed `bottom` from the hero
-      // bottom means the pitch's document position is also fixed.
-      //
-      // Reading getComputedStyle(pitch).bottom returns the CSS-
-      // evaluated px value at this moment (calc(stack + 15dvh)
-      // evaluated). Setting pitch.style.bottom overrides the CSS
-      // rule with an inline px value, locking the pitch until the
-      // next setupAnimation() — which fires on width resize, the same
-      // time the CSS media query may swap between mobile (position:
-      // absolute, this rule) and desktop (in-flow, no `bottom`), so
-      // the snapshot stays consistent with the active CSS.
-      const pitch = document.querySelector<HTMLElement>(".m-hero__pitch");
-      if (pitch) {
-        const pitchStyle = getComputedStyle(pitch);
-        if (pitchStyle.position === "absolute") {
-          const pitchBottomPx = parseFloat(pitchStyle.bottom);
-          if (isFinite(pitchBottomPx)) {
-            pitch.style.bottom = `${pitchBottomPx}px`;
-          }
-        }
-      }
     };
 
     // Wait for the webfont to settle so offsetWidth/offsetHeight/fontSize

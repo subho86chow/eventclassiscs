@@ -38,7 +38,7 @@
   width: 100%;
   height: 100%;
   min-height: 100vh;
-  min-height: 100dvh;
+  min-height: 100svh;
 
   /* The canvas never receives pointer events — every interaction on
    * the hero (nav links, CTA, sound toggle) must still hit its real

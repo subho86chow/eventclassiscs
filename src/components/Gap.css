@@ -37,6 +37,7 @@
    * subsequent sections while the closure animation is playing. */
   z-index: 10;
   height: 100vh;
+  height: 100lvh;
   width: 100%;
 
   /* Flex column. align-items: center is critical — without it, the

@@ -16,22 +16,20 @@
 }
 
 /* ScrollTrigger's spacer includes both the pin duration and the pinned
- * section's own 100dvh footprint. Once the Keep Scrolling animation ends,
+ * section's own stable 100lvh footprint. Once the animation ends,
  * that last footprint is otherwise seen as a full blank viewport. Apply
  * the overlap only after GSAP has created the spacer, avoiding any
- * pre-hydration overlap, and keep the first content within 10dvh. */
+ * pre-hydration overlap, and keep the first content within 10svh. */
 .pin-spacer + .success-stories {
   margin-block-start: -100vh;
-  margin-block-start: -100dvh;
-  padding-block-start: min(clamp(4rem, 8vw, 8rem), 10dvh);
+  margin-block-start: -100lvh;
+  padding-block-start: min(clamp(4rem, 8vw, 8rem), 10svh);
 }
 
 @media (max-width: 768px) {
   .pin-spacer + .success-stories {
-    /* Portrait phones settle near 8dvh; short/landscape screens can breathe
-     * up to 20dvh without recreating a blank viewport. */
-    padding-block-start: clamp(8vh, 4rem, 20vh);
-    padding-block-start: clamp(8dvh, 4rem, 20dvh);
+    /* Stable across mobile browser chrome changes. */
+    padding-block-start: clamp(8svh, 4rem, 20svh);
   }
 }
 

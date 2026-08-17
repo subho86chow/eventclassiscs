@@ -5,12 +5,6 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./Statement.css";
 
-/* Adaptive frame-rate handling — if the gap between rAF ticks exceeds
- * 500 ms we assume a tab-switch and stop compensating. Gaps under
- * 33 ms are ignored as noise. Keeps the scroll-driven letter reveal
- * smooth across heavy GC pauses or backgrounded tabs. */
-gsap.ticker.lagSmoothing(500, 33);
-
 /**
  * Hallmark · editorial "Section 01/02" statement.
  *
