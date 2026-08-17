@@ -115,5 +115,14 @@
   pointer-events: none;
 }
 
+/* The 22px backdrop blur on the smoke band is a mobile-GPU hotspot during
+ * the handoff; drop it to a cheaper 8px on narrow viewports. */
+@media (max-width: 768px) {
+  .keep-scrolling__smoke {
+    -webkit-backdrop-filter: blur(8px) saturate(0.82);
+    backdrop-filter: blur(8px) saturate(0.82);
+  }
+}
+
 /* Reduced motion: JS skips the ScrollTrigger and glyph-march setup,
  * leaving the measured static initial frame. */

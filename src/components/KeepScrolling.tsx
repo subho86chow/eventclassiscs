@@ -121,6 +121,25 @@ export function KeepScrolling() {
     let layoutReady = false;
     let disposed = false;
 
+    /* Precompute the stadium perimeter geometry ONCE so the per-frame
+     * march never calls getPointAtLength() — the most expensive SVG DOM
+     * API, and the old loop hit it ~135×/frame (3 × 45 glyphs) for the
+     * whole pin. Each sample stores the point + tangent angle. */
+    const LUT_SIZE = 1024;
+    const lutPoints = Array.from({ length: LUT_SIZE }, (_, i) =>
+      path.getPointAtLength((i / LUT_SIZE) * perimeter),
+    );
+    const lut = lutPoints.map((p, i) => {
+      const before = lutPoints[(i - 1 + LUT_SIZE) % LUT_SIZE];
+      const after = lutPoints[(i + 1) % LUT_SIZE];
+      return {
+        x: p.x,
+        y: p.y,
+        angle:
+          Math.atan2(after.y - before.y, after.x - before.x) * (180 / Math.PI),
+      };
+    });
+
     /* Lay each glyph out independently and wrap its distance with modulo.
      * Unlike textPath startOffset, this never creates text before/after a
      * path endpoint: the closed path genuinely has no first or last glyph. */
@@ -131,14 +150,12 @@ export function KeepScrolling() {
         if (!glyph) return;
 
         const distance = (glyphCentres[index] + phase) % perimeter;
-        const before = path.getPointAtLength((distance - 0.35 + perimeter) % perimeter);
-        const point = path.getPointAtLength(distance);
-        const after = path.getPointAtLength((distance + 0.35) % perimeter);
-        const angle = Math.atan2(after.y - before.y, after.x - before.x) * (180 / Math.PI);
+        const sample =
+          lut[Math.round((distance / perimeter) * LUT_SIZE) % LUT_SIZE];
 
         glyph.setAttribute(
           "transform",
-          `translate(${point.x.toFixed(3)} ${point.y.toFixed(3)}) rotate(${angle.toFixed(3)}) translate(0 -15)`,
+          `translate(${sample.x.toFixed(3)} ${sample.y.toFixed(3)}) rotate(${sample.angle.toFixed(3)}) translate(0 -15)`,
         );
         glyph.setAttribute("opacity", "1");
       });
@@ -267,6 +284,11 @@ export function KeepScrolling() {
           else section.style.removeProperty("z-index");
         };
 
+        // Native mobile touch scroll fires scroll events in uneven
+        // increments; a short smoothing window damps that jitter the same
+        // way the hero wordmark does. Desktop keeps the direct mapping.
+        const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
         const tl = gsap.timeline({
           defaults: { ease: "none", force3D: true },
           scrollTrigger: {
@@ -278,10 +300,11 @@ export function KeepScrolling() {
              * auto-disables pin spacing under a flex parent — which would
              * leave zero scroll room for the scrub. Force it back on. */
             pinSpacing: true,
-            /* Direct 1:1 mapping of scroll → timeline progress. `scrub: 0.75`
-             * was a 750 ms catch-up window — exactly the perceived lag the
-             * user felt in the wordmark animation. Same fix here. */
-            scrub: true,
+            /* Direct 1:1 mapping of scroll → timeline progress on desktop.
+             * `scrub: 0.75` was a 750 ms catch-up window — exactly the
+             * perceived lag the user felt. On mobile a short 0.2s window
+             * smooths the uneven native scroll events instead. */
+            scrub: isMobile ? 0.2 : true,
             /* Pre-pin the layout by 1 px on fast scroll so the pin doesn't
              * visibly snap on trackpad flicks. */
             anticipatePin: 1,
@@ -370,7 +393,7 @@ export function KeepScrolling() {
             trigger: section,
             start: "top bottom",
             end: driftEnd,
-            scrub: true,
+            scrub: isMobile ? 0.2 : true,
           },
         });
 
