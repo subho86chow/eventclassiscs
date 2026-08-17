@@ -189,6 +189,16 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
       const hero = document.querySelector<HTMLElement>(".m-hero");
       if (!hero) return;
 
+      // Mobile native touch scroll fires scroll events in uneven
+      // increments, so a direct 1:1 scrub maps that jitter straight onto
+      // the wordmark and makes it wiggle at medium scroll speed. A short
+      // smoothing window (0.2s) damps the jitter without the perceptible
+      // catch-up lag a longer window introduces. Desktop keeps the direct
+      // mapping (wheel/trackpad events are smooth on their own).
+      // Re-evaluated on width change because setupAnimation() is rebuilt
+      // by the resize handler below when the breakpoint is crossed.
+      const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
       tween = gsap.to(wordmark, {
         x: headerPadX,
         y: headerTargetY,
@@ -199,12 +209,7 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
           trigger: hero,
           start: "top top",
           end: "bottom top",
-          // 1:1 scroll mapping. The user complained "slightly laggy"
-          // and 100 ms of intentional smoothing was exactly what they
-          // were feeling. With force3D: true the compositor absorbs any
-          // micro-jitter the wheel / trackpad introduces, so direct
-          // mapping reads as smooth without the perceptible delay.
-          scrub: true,
+          scrub: isMobile ? 0.2 : true,
         },
       });
 

@@ -12,22 +12,15 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     /* Touch detection at mount — drives the touch-optimised Lenis
      * config below.
      *
-     * syncTouch: true on touch is what feeds ScrollTrigger a smooth,
-     * frame-consistent scroll position on mobile. With touch left
-     * native (syncTouch: false, the default), the scroll position
-     * reaches the main thread in uneven increments and every
-     * scrub-driven transform (the hero wordmark's scroll-to-header
-     * move) jitters at medium scroll speed. Driving touch through
-     * Lenis instead — finger tracked 1:1 while dragging, then smooth
-     * rAF-driven momentum on release — gives ScrollTrigger even deltas,
-     * so the wordmark follows without shimmer.
+     * Touch is deliberately left NATIVE (syncTouch: false, the default).
+     * Native touch scrolls on the compositor thread, so the page stays
+     * smooth even though the main thread is busy every frame (WebGL hero
+     * shader + difference-blend groups + ScrollTrigger scrubs). Enabling
+     * syncTouch moves scrolling onto that busy main thread and the whole
+     * page goes choppy on mobile — the regression we hit.
      *
-     * Touch-feel knobs (tune on device if it feels off):
-     *   • touchMultiplier — drag speed vs the finger (1.4 = ~40% faster;
-     *     drop toward 1 if it reads as slippery).
-     *   • syncTouchLerp (default 0.075) — momentum smoothing on release.
-     *   • touchInertiaExponent (default 1.7) — release inertia strength.
-     * Desktop (wheel) behaviour is unchanged. */
+     * The hero wordmark's scroll jitter is handled at the text level
+     * (HeroWordmark.tsx) instead, so we never need to hijack touch. */
     const isTouch =
       typeof window !== "undefined" &&
       window.matchMedia("(hover: none) and (pointer: coarse)").matches;
@@ -36,7 +29,6 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       duration: isTouch ? 0.65 : 1.05,
       wheelMultiplier: isTouch ? 1 : 0.82,
       touchMultiplier: isTouch ? 1.4 : 1,
-      syncTouch: isTouch,
       anchors: {
         duration: 1.6,
         easing: (t) =>
