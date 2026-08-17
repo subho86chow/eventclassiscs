@@ -153,7 +153,7 @@ export function SuccessStories() {
         });
         updatePlayback();
       },
-      { threshold: Array.from({ length: 11 }, (_, index) => index / 10) },
+      { threshold: [0.1, 0.5, 0.9] },
     );
 
     const showVideo = (event: Event) => {

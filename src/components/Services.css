@@ -48,7 +48,10 @@
   flex-direction: column;
   transform: translate3d(0, var(--services-description-y), 0);
   transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
+  /* No `will-change` — the CSS transition promotes the layer
+   * transiently during the transform, then releases it. A permanent
+   * hint would pin this GPU layer for the lifetime of the page.
+   * Aligns with HeroWordmark.tsx / LiquidMetalBg.css policy. */
 }
 
 .services__description {
@@ -193,7 +196,7 @@
   aspect-ratio: 3 / 4;
   transform: translate3d(0, var(--services-image-y), 0);
   transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
+  /* No `will-change` — see .services__left for the policy. */
 }
 
 .services__hover-image {

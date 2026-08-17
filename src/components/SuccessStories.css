@@ -178,7 +178,13 @@
 
 /* Parallax target. Sized taller than the figure and centred on it, giving
  * the slide `--ss-image-overscan` of slack at each edge. Also the containing
- * block for the `fill` image inside it. */
+ * block for the `fill` image inside it.
+ *
+ * No `will-change` — the GSAP scrub uses `force3D: true` which
+ * promotes the layer transiently during animation, then releases it.
+ * Outside the scrub the frame is static. A permanent hint would pin
+ * 4 GPU layers (one per project image) for the page lifetime. See
+ * HeroWordmark.tsx / LiquidMetalBg.css for the same policy. */
 .success-stories__image-frame {
   position: absolute;
   z-index: 0;
@@ -186,10 +192,6 @@
   width: 100%;
   top: calc(-1 * var(--ss-image-overscan));
   height: calc(100% + 2 * var(--ss-image-overscan));
-
-  /* Hint the compositor before the first scrub frame so the initial
-   * transform doesn't cause a one-frame promotion hitch. */
-  will-change: transform;
 }
 
 .success-stories__image {
@@ -211,7 +213,8 @@
   transition:
     opacity 420ms ease-out,
     transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform, opacity;
+  /* No `will-change` — the CSS transition handles layer promotion
+   * transiently. 4 videos × permanent hint = 4 pinned GPU layers. */
 }
 
 .success-stories__video--playing {

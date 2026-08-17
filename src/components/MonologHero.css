@@ -132,6 +132,14 @@
   opacity: 0.6;
 }
 
+/* The <li> wrappers inherit the globals :where(li) difference blend —
+ * neutralise it (like the <a> above) so framer-motion can transform the
+ * <li> during the load-in entrance without clipping the invert. The <a>
+ * inside keeps its own hover opacity. */
+.m-hero__links li {
+  mix-blend-mode: normal;
+}
+
 .m-hero__actions {
   flex: 1 1 0;
   min-width: 0;
@@ -260,6 +268,19 @@
   outline-offset: 2px;
 }
 
+/* ---------- Load-in entrance pre-hide ----------
+ * The hero reveals bottom→top on first paint (wordmark → pitch → nav
+ * links → CTA); framer-motion animates the motion (see MonologHero.tsx).
+ * These rules only pre-hide the elements so the SSR HTML doesn't flash
+ * them visible before hydration — the same trick as the wordmark's
+ * .m-hero__wordmark-letter. Reduced-motion re-shows them instantly in the
+ * reduced-motion block at the bottom of this file. */
+.m-hero__para,
+.m-hero__links li,
+.m-hero__cta {
+  opacity: 0;
+}
+
 /* ---------- Centred pitch ---------- */
 
 .m-hero__pitch {
@@ -279,9 +300,13 @@
    * whole group down by half the padding. */
   padding-top: clamp(8rem, 17svh, 17rem);
 
-  /* Global invert from globals.css applies (color: #ffffff,
-   * mix-blend-mode: difference). Children (mic icon, two paragraphs)
-   * inherit. */
+  /* Container-level difference invert: the blend lives HERE on a
+   * static, never-transformed div so the .m-hero__para child can be
+   * transform-animated by framer-motion without breaking the invert
+   * (blend + transform on the SAME element is the documented clip bug).
+   * The paragraph is white + normal-blend and inverts against this
+   * group — the same pattern as the nav and the wordmark. */
+  mix-blend-mode: difference;
 
   /* Horizontal padding lives on .m-hero (5 vw each side). No need to
    * duplicate it here.
@@ -305,14 +330,16 @@
   font-size: clamp(1.125rem, 2.4vw, 1.75rem);
   line-height: 1.4;
   letter-spacing: -0.02em;
-  /* No `color: inherit` here on purpose. The page-wide
-   * `mix-blend-mode: difference` in globals.css needs the text to be
-   * pure white (#fff) for the blend to produce dark ink on the
-   * near-white canvas. A `color: inherit` declaration (specificity
-   * 0,1,0) would beat the :where() rule (specificity 0) and pull
-   * in `var(--ink)` from the body — which, blended with difference
-   * against a near-white backdrop, produces near-white and renders
-   * the paragraph invisible on the liquid-metal hero. */
+  /* The pitch div is the difference blend group (see .m-hero__pitch);
+   * this <p> stays normal-blend so framer-motion can slide it. */
+  mix-blend-mode: normal;
+  /* No `color: inherit` here on purpose. The text must stay pure white
+   * (#fff) so the .m-hero__pitch group's difference blend inverts it to
+   * dark ink on the near-white canvas. A `color: inherit` declaration
+   * (specificity 0,1,0) would beat the :where() rule (specificity 0) and
+   * pull in `var(--ink)` from the body — which, blended with difference
+   * against a near-white backdrop, produces near-white and renders the
+   * paragraph invisible on the liquid-metal hero. */
   margin: 0;
   max-width: 36ch;
 }
@@ -652,6 +679,13 @@
 /* ---------- Reduced motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
+  /* Skip the load-in entrance: reveal the hero elements instantly. */
+  .m-hero__para,
+  .m-hero__links li,
+  .m-hero__cta {
+    opacity: 1;
+  }
+
   .m-hero__toggle,
   .m-hero__cta,
   .m-hero__links a {

@@ -1,3 +1,6 @@
+"use client";
+
+import { motion, useReducedMotion } from "motion/react";
 import { LiquidMetalBg } from "./LiquidMetalBg";
 import { HeroWordmark } from "./HeroWordmark";
 import "./MonologHero.css";
@@ -5,7 +8,8 @@ import "./MonologHero.css";
 /**
  * Hallmark · atmospheric · studied DNA from Monolog.
  *
- * Server component. Three vertical regions:
+ * Client component — framer-motion drives the load-in entrance.
+ * Three vertical regions:
  *   1. edge-aligned nav (wordmark left, links centre, sound + CTA right)
  *   2. centred pitch (small wireframe mic icon + a single prose paragraph)
  *   3. massive cropped wordmark bleeding off viewport edges
@@ -43,6 +47,8 @@ export function MonologHero({
   para1 = "We design change-making website experiences for brands whose reputation has outgrown their digital presence.",
   cta = { label: "Start a project", href: "#start" },
 }: MonologHeroProps) {
+  const reduce = useReducedMotion() ?? false;
+
   return (
     <>
       <section className="m-hero" id="home">
@@ -73,7 +79,14 @@ export function MonologHero({
             <line x1="12" y1="34" x2="36" y2="34" />
           </svg> */}
 
-          <p className="m-hero__para">{para1}</p>
+          <motion.p
+            className="m-hero__para"
+            initial={reduce ? false : { opacity: 0, y: 28 }}
+            animate={reduce ? undefined : { opacity: 1, y: 0 }}
+            transition={{ delay: 0.35, duration: 0.7, ease: "easeInOut" }}
+          >
+            {para1}
+          </motion.p>
         </div>
 
         {/* In-flow spacer only — reserves the hero's bottom row height.
@@ -101,10 +114,19 @@ export function MonologHero({
         <div className="m-hero__nav-brand" aria-hidden="true" />
 
         <ul className="m-hero__links" role="list">
-          {navLinks.map((link) => (
-            <li key={link.label}>
+          {navLinks.map((link, i) => (
+            <motion.li
+              key={link.label}
+              initial={reduce ? false : { opacity: 0, y: 16 }}
+              animate={reduce ? undefined : { opacity: 1, y: 0 }}
+              transition={{
+                delay: 0.55 + i * 0.07,
+                duration: 0.5,
+                ease: "easeInOut",
+              }}
+            >
               <a href={link.href}>{link.label}</a>
-            </li>
+            </motion.li>
           ))}
         </ul>
 
@@ -122,7 +144,13 @@ export function MonologHero({
        * section visuals (e.g. .gap__display) paint over the pill. As a
        * body-level sibling it keeps its true 200. The mobile layout in
        * MonologHero.css repositions it without reparenting. */}
-      <a className="m-hero__cta" href={cta.href}>
+      <motion.a
+        className="m-hero__cta"
+        href={cta.href}
+        initial={reduce ? false : { opacity: 0 }}
+        animate={reduce ? undefined : { opacity: 1 }}
+        transition={{ delay: 0.85, duration: 0.6, ease: "easeInOut" }}
+      >
         <span className="m-hero__cta-label">{cta.label}</span>
         <span className="m-hero__cta-arrow" aria-hidden="true">
           <svg
@@ -140,7 +168,7 @@ export function MonologHero({
             <polyline points="7 7 17 7 17 17" />
           </svg>
         </span>
-      </a>
+      </motion.a>
 
       {/* Fixed full-viewport blend group for the wordmark — rendered
        * outside the hero section for the same stacking-context reason

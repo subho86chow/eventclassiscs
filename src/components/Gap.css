@@ -130,7 +130,8 @@
   margin-block: clamp(1rem, 2vw, 1.5rem);
   transform: scale(0.45);
   transform-origin: center;
-  will-change: transform;
+  /* No `will-change` — GSAP's `force3D: true` on the scrub handles
+   * layer promotion transiently. See HeroWordmark.tsx for the policy. */
 
   /* Soft drop shadow to lift the image off the page. */
   filter: drop-shadow(

@@ -21,9 +21,13 @@ const NAV_ITEMS: ReadonlyArray<{ label: string; href: string }> = [
 ];
 
 const SOCIAL_ITEMS: ReadonlyArray<{ label: string; href: string }> = [
-  { label: "YouTube",   href: "#" },
-  { label: "LinkedIn",  href: "#" },
-  { label: "Instagram", href: "#" },
+  { label: "YouTube", href: "https://www.youtube.com/@EventClassics" },
+  { label: "Instagram", href: "https://www.instagram.com/eventclassics.in/" },
+  { label: "X", href: "https://x.com/EventClassicsIN" },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/company/event-classics-in/?viewAsMember=true",
+  },
 ];
 
 export function Footer() {
