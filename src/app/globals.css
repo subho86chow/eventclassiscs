@@ -124,6 +124,9 @@
   --space-2xl: 4.5rem;
   --space-3xl: 6.5rem;
 
+  /* Shared outer rhythm for editorial sections. */
+  --section-space: clamp(3rem, 6vw, 6rem);
+
   /* Easings + durations. */
   --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in:       cubic-bezier(0.4, 0, 1, 1);

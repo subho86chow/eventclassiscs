@@ -30,10 +30,11 @@ interface MonologHeroProps {
 }
 
 const DEFAULT_LINKS = [
-  { label: "About", href: "#about" },
-  { label: "Work", href: "#work" },
+  { label: "Home", href: "#home" },
+  { label: "About Us", href: "#about" },
+  { label: "Work", href: "#success-stories" },
   { label: "Services", href: "#services" },
-  { label: "Process", href: "#process" },
+  { label: "FAQ", href: "#faq" },
 ] as const;
 
 export function MonologHero({
@@ -44,7 +45,7 @@ export function MonologHero({
 }: MonologHeroProps) {
   return (
     <>
-      <section className="m-hero">
+      <section className="m-hero" id="home">
         {/* Shader background — pinned to the hero's bounding box
          * (position: absolute via .liquid-metal-bg), sits at z-index: -1
          * so the fixed nav (200) and wordmark (300) both render above it
@@ -110,14 +111,10 @@ export function MonologHero({
         <div className="m-hero__actions" />
       </nav>
 
-      {/* Primary CTA — fixed, OUTSIDE the nav on purpose. The nav is a
-       * container-level mix-blend-mode: difference group, which can
-       * never render a solid filled pill (at mid-tone backdrops the
-       * difference math collapses the pill's internal text contrast to
-       * zero). As a fixed sibling the CTA blends normally and always
-       * renders its true colours: black pill / white text. Position
-       * mirrors the nav band: top matches the nav's padding-block,
-       * right matches its padding-inline.
+      {/* Primary CTA — fixed, OUTSIDE the nav so its complete pill can
+       * difference-blend as one group against the current section.
+       * Position mirrors the nav band: top matches the nav's
+       * padding-block, right matches its padding-inline.
        *
        * Also deliberately outside <section class="m-hero">: the hero sets
        * z-index: 10, which would cap this element's own z-index: 200

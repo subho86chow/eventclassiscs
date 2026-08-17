@@ -34,9 +34,9 @@ export function Statement({
     "Great founders changing the world deserve a presence as powerful as what they're building. Most founders we work with have built something significant, but their brand doesn't shows it yet.",
     "That gap costs more than revenue. It costs the certainty that your brand is finally being understood.",
   ],
-  bylineName = "Huy (By Huy) Nguyen",
+  bylineName = "Pamal Mondal",
   bylineRole = "Founder, eventclassics",
-  bylineInitials = "H",
+  bylineInitials = "P",
 }: StatementProps) {
   /* Scroll-driven letter-by-letter opacity reveal: every character in the
    * editorial copy is wrapped in `.statement__letter` and animated from
@@ -88,7 +88,7 @@ export function Statement({
   }
 
   return (
-    <section className="statement" id="statement">
+    <section className="statement" id="about">
       <div className="statement__inner">
         <div className="statement__left-column">
           {/* Left column: stat block */}

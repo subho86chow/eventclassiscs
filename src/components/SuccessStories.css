@@ -12,7 +12,7 @@
   background: var(--paper);
 
   width: 100%;
-  padding-block: clamp(4rem, 8vw, 8rem);
+  padding-block: var(--section-space);
 }
 
 /* ScrollTrigger's spacer includes both the pin duration and the pinned

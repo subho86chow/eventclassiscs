@@ -12,7 +12,12 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     const lenis = new Lenis({
       duration: 1.05,
       wheelMultiplier: 0.82,
-      anchors: true,
+      anchors: {
+        duration: 1.6,
+        easing: (t) =>
+          t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+        offset: -72,
+      },
       stopInertiaOnNavigate: true,
     });
 

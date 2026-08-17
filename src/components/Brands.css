@@ -1,14 +1,14 @@
 .brands {
   position: relative;
   width: 100%;
-  padding-block: clamp(3rem, 7vw, 7rem);
+  padding-block: var(--section-space);
   background: var(--paper);
 }
 
 .brands::before {
   content: "";
   position: absolute;
-  top: clamp(3rem, 7vw, 7rem);
+  top: var(--section-space);
   right: 20px;
   left: 20px;
   border-top: 1px solid color-mix(in oklch, var(--ink) 14%, transparent);

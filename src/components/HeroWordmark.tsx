@@ -82,7 +82,7 @@ if (typeof window !== "undefined") {
  */
 
 const HEADER_PAD_X_FALLBACK = 20; // px — fallback if nav padding can't be read
-const HEADER_PAD_Y_FALLBACK = 16; // px — fallback if nav padding can't be read
+const HEADER_TARGET_Y_FALLBACK = 16; // px — fallback if nav can't be measured
 const TARGET_FONT_SIZE = 24; // px — final wordmark size (≈ header-logo scale)
 const BLUR_OVERSCAN = 12; // px — keeps the initial filter bloom inside the blend group
 
@@ -131,20 +131,24 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
       if (!isFinite(initialFontSize) || initialFontSize <= 0) return;
       const targetScale = TARGET_FONT_SIZE / initialFontSize;
 
-      // Read the actual rendered padding of the sticky nav so the
-      // wordmark's final position aligns with the nav's left edge and
-      // top edge. This keeps it visually anchored to the header band
-      // regardless of viewport (the nav uses vw-based padding that
-      // varies with viewport width).
+      // Read the sticky nav so the wordmark shares the exact horizontal
+      // edge and vertical centre used by the menu and CTA.
       const nav = document.querySelector<HTMLElement>(".m-hero__nav");
       let headerPadX = HEADER_PAD_X_FALLBACK;
-      let headerPadY = HEADER_PAD_Y_FALLBACK;
+      let headerTargetY = HEADER_TARGET_Y_FALLBACK;
       if (nav) {
         const navStyle = getComputedStyle(nav);
         const navPadLeft = parseFloat(navStyle.paddingLeft);
-        const navPadTop = parseFloat(navStyle.paddingTop);
         if (isFinite(navPadLeft)) headerPadX = navPadLeft;
-        if (isFinite(navPadTop)) headerPadY = navPadTop;
+
+        const navHeight = nav.getBoundingClientRect().height;
+        const finalWordmarkHeight = wordmark.offsetHeight * targetScale;
+        if (isFinite(navHeight) && navHeight > 0) {
+          headerTargetY = Math.max(
+            0,
+            (navHeight - finalWordmarkHeight) / 2,
+          );
+        }
       }
 
       // Initial visual position: bottom-centre of viewport, with 5 vw
@@ -173,7 +177,7 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
 
       tween = gsap.to(wordmark, {
         x: headerPadX,
-        y: headerPadY,
+        y: headerTargetY,
         scale: targetScale,
         ease: "none",
         force3D: true,
@@ -220,9 +224,13 @@ export function HeroWordmark({ text }: HeroWordmarkProps) {
         const finalW = w * targetScale;
         const finalH = h * targetScale;
         const left = Math.max(0, Math.min(startX, headerPadX) - BLUR_OVERSCAN);
-        const top = Math.max(0, Math.min(startY, headerPadY) - BLUR_OVERSCAN);
+        const top = Math.max(
+          0,
+          Math.min(startY, headerTargetY) - BLUR_OVERSCAN,
+        );
         const right = Math.max(startX + w, headerPadX + finalW) + BLUR_OVERSCAN;
-        const bottom = Math.max(startY + h, headerPadY + finalH) + BLUR_OVERSCAN;
+        const bottom =
+          Math.max(startY + h, headerTargetY + finalH) + BLUR_OVERSCAN;
         group.style.left = `${left}px`;
         group.style.top = `${top}px`;
         group.style.width = `${Math.max(1, right - left)}px`;

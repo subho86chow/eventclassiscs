@@ -13,12 +13,11 @@ import "./Footer.css";
  */
 
 const NAV_ITEMS: ReadonlyArray<{ label: string; href: string }> = [
-  { label: "About",     href: "#about" },
-  { label: "Work",      href: "#work" },
-  { label: "Process",   href: "#process" },
+  { label: "Home",      href: "#home" },
+  { label: "About Us",  href: "#about" },
+  { label: "Work",      href: "#success-stories" },
   { label: "Services",  href: "#services" },
-  { label: "Resources", href: "#resources" },
-  { label: "Contact",   href: "#contact" },
+  { label: "FAQ",       href: "#faq" },
 ];
 
 const SOCIAL_ITEMS: ReadonlyArray<{ label: string; href: string }> = [
@@ -86,7 +85,10 @@ export function Footer() {
               playsInline
               preload="metadata"
             >
-              <source src="/videos/ec-logo-glass.mp4" type="video/mp4" />
+              <source
+                src="/videos/footer-logo-magnific.mp4"
+                type="video/mp4"
+              />
             </video>
           </div>
 
@@ -144,6 +146,10 @@ export function Footer() {
           </div>
         </div>
       </div>
+
+      <p className="footer__copyright">
+        © 2026 eventclassics. All rights reserved.
+      </p>
     </footer>
   );
 }

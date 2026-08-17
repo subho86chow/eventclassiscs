@@ -4,15 +4,17 @@
 .faq {
   position: relative;
   width: 100%;
-  padding-block: clamp(2rem, 3svh, 3rem);
+  padding-block: var(--section-space);
   background: var(--ink);
   color: var(--paper);
 }
 
 .faq__inner {
   width: 100%;
-  min-height: calc(100svh - clamp(4rem, 6svh, 6rem));
-  padding-inline: clamp(1.25rem, 2vw, 3rem);
+  max-width: 90rem;
+  margin-inline: auto;
+  min-height: calc(100svh - var(--section-space) - var(--section-space));
+  padding-inline: clamp(var(--space-md), 5vw, var(--space-2xl));
 
   display: grid;
   grid-template-columns: minmax(15rem, 0.32fr) minmax(0, 0.68fr);
@@ -88,15 +90,7 @@
   inset: auto;
   z-index: 0;
   align-self: flex-start;
-  border-color: var(--paper);
-  background: var(--paper);
-  color: var(--ink);
-}
-
-.faq .faq__cta-button span,
-.faq .faq__cta-button svg {
-  color: inherit;
-  mix-blend-mode: normal;
+  transform: none;
 }
 
 .faq__right {
@@ -239,10 +233,6 @@
 }
 
 @media (max-width: 520px) {
-  .faq {
-    padding-block: 2.5rem;
-  }
-
   .faq__headline {
     font-size: clamp(2.2rem, 10vw, 3rem);
   }

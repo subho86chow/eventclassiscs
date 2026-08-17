@@ -139,10 +139,10 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-md);
-  /* The CTA no longer lives in this row — reserve its 43 px so the
+  /* The CTA no longer lives in this row — reserve its exact 44 px so the
    * nav band keeps its height and the links stay vertically centred
    * on the pill's centre. */
-  min-height: 43px;
+  min-height: 44px;
 }
 
 /* Sound-toggle — icon-only button, no chrome. Sits inline with the
@@ -182,14 +182,9 @@
   outline-offset: 2px;
 }
 
-/* Primary CTA — filled pill, fixed to the nav band, rendered OUTSIDE
- * the nav's difference blend group (see MonologHero.tsx) so it always
- * shows its true colours on any backdrop.
- *
- * Rest: white pill + ink ring + black text (outlined — visible against
- * the light shader hero). Hover: flips to a solid black pill with
- * white text + arrow, and the arrow slides up-right along its
- * diagonal.
+/* Primary CTA — one difference-blended black/white group. Keeping its
+ * internal palette stable lets the pill, label, badge and arrow
+ * invert together against whichever section is behind it.
  *
  * Offsets mirror the nav band: top = nav's padding-block (0.5rem),
  * right = nav's padding-inline (2vw), z-index matches the nav (200). */
@@ -207,66 +202,43 @@
   font-size: 0.9375rem;
   letter-spacing: -0.005em;
 
-  /* Fixed height so the arrow circle (sized to --cta-h) can fill the
-   * pill's full height and its 50% radius lines up with the pill's
-   * right-end 999px rounding. Left inset only — the circle is flush
-   * against the right edge. */
+  /* Fixed height keeps the arrow circle and pill geometry predictable. */
   --cta-h: 2.75rem;
   height: var(--cta-h);
-  /* 2px right inset keeps the circle inside the pill instead of flush. */
-  padding: 0 2px 0 1.25rem;
-  border: 1px solid var(--color-foreground);
+  /* With no border consuming the border-box, --cta-h - 8px gives the
+   * circle an exact 4px inset at the top, right and bottom. */
+  padding: 0 4px 0 1.25rem;
+  border: 0;
   border-radius: 999px;
 
   background: var(--color-paper);
   color: var(--color-foreground);
 
-  mix-blend-mode: normal;
+  mix-blend-mode: difference;
   text-decoration: none;
   white-space: nowrap;
-
-  transition:
-    background-color var(--dur-normal) var(--ease-in-out),
-    color var(--dur-normal) var(--ease-in-out),
-    border-color var(--dur-normal) var(--ease-in-out);
 }
 
-/* The label span is in globals.css's :where() invert list, which sets
- * color: #fff directly on it (specificity 0, beats nothing) — so we
- * must re-tie it to the pill's own color, otherwise the hover flip
- * never reaches the text. */
+/* Re-tie the globally blended label to the pill's internal ink colour. */
 .m-hero__cta-label {
   color: currentColor;
   mix-blend-mode: normal;
 }
 
-/* Circular badge that holds the arrow. Black at rest (white arrow),
- * white on hover (black arrow) — the inverse of the pill itself. */
+/* The badge stays opposite to the pill within the blended group. */
 .m-hero__cta-arrow {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: calc(var(--cta-h) - 4px);
-  height: calc(var(--cta-h) - 4px);
+  width: calc(var(--cta-h) - 8px);
+  height: calc(var(--cta-h) - 8px);
+  flex: 0 0 calc(var(--cta-h) - 8px);
   border-radius: 50%;
 
   background: var(--color-foreground);
   color: var(--color-paper);
 
   mix-blend-mode: normal;
-
-  transition:
-    background-color var(--dur-normal) var(--ease-in-out),
-    color var(--dur-normal) var(--ease-in-out);
-}
-
-.m-hero__cta:hover {
-  background: var(--color-foreground);
-  color: var(--color-paper);
-}
-
-.m-hero__cta:active {
-  background: var(--color-ink-dim);
 }
 
 /* Arrow sits at 45° up-right at rest; on hover it rotates -135°
@@ -277,11 +249,6 @@
   transform: rotate(0deg);
   transform-origin: 50% 50%;
   transition: transform var(--dur-normal) var(--ease-in-out);
-}
-
-.m-hero__cta:hover .m-hero__cta-arrow {
-  background: var(--color-paper);
-  color: var(--color-foreground);
 }
 
 .m-hero__cta:hover .m-hero__cta-arrow svg {

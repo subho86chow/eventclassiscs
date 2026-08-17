@@ -1,67 +1,23 @@
 "use client";
 
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import "./Services.css";
 
 /**
- * Hallmark · "What we can help with" / testimonials section.
+ * Hallmark · "What we can help with" services section.
  *
- * Two-column layout:
- *   col 1 (left)  · pager + (REAL CLIENT STORIES) + rotating testimonial
- *                   with a CSS-animated progress bar, plus byline + avatar.
- *                   Every 15 s the active testimonial crossfades to the
- *                   next; the progress bar resets in lock-step.
- *   col 2 (right) · "● What we can help with" header + services list.
+ * Three-column layout:
+ *   col 1 (left)  · active service description.
+ *   col 2 (middle) · "● What we can help with" header + services list.
  *                   Each row is dim by default; on hover it goes full
  *                   opacity and reveals a floating image to the right of
  *                   the list, vertically aligned to the hovered row.
- *
- * prefers-reduced-motion disables both the carousel and the hover image.
+ *   col 3 (right) · image for the active service.
  */
-
-interface Testimonial {
-  quote: string;
-  author: string;
-  role: string;
-  /** Background for the avatar circle placeholder. */
-  avatarFrom: string;
-  avatarTo: string;
-}
-
-const TESTIMONIALS: ReadonlyArray<Testimonial> = [
-  {
-    quote:
-      "For years, our website struggled to showcase our work effectively and attract the right clients. Within just 30 days of launching the new site with eventclassics, we generated $100k in new sales and receive 2-3 qualified inquiries every week.",
-    author: "Andrew Tynes",
-    role: "Owner, Mammoth Murals",
-    avatarFrom: "oklch(60% 0.10 40)",
-    avatarTo: "oklch(40% 0.08 25)",
-  },
-  {
-    quote:
-      "eventclassics rebuilt our entire brand presence in six weeks. Their team translated our operational complexity into a site investors actually understand — and the inbound shifted within a quarter.",
-    author: "Priya Anand",
-    role: "Co-founder, Verdant Group",
-    avatarFrom: "oklch(60% 0.10 240)",
-    avatarTo: "oklch(40% 0.08 200)",
-  },
-  {
-    quote:
-      "We were shipping great events and a website that read like a brochure. eventclassics found the through-line — every page, every deck, every email now carries the same argument.",
-    author: "Huy Nguyen",
-    role: "Founder, eventclassics",
-    avatarFrom: "oklch(60% 0.10 90)",
-    avatarTo: "oklch(40% 0.08 60)",
-  },
-];
 
 interface Service {
   name: string;
+  description: string;
   /** Placeholder image background (used until a real asset lands). */
   imageFrom: string;
   imageTo: string;
@@ -69,176 +25,92 @@ interface Service {
 }
 
 const SERVICES: ReadonlyArray<Service> = [
-  { name: "Brand Strategy",       imageFrom: "oklch(35% 0.04 30)",  imageTo: "oklch(15% 0.04 20)",  imageLabel: "BRAND STRATEGY" },
-  { name: "Visual Identity",      imageFrom: "oklch(35% 0.04 90)",  imageTo: "oklch(15% 0.04 70)",  imageLabel: "VISUAL IDENTITY" },
-  { name: "Website Strategy",     imageFrom: "oklch(35% 0.04 200)", imageTo: "oklch(15% 0.04 180)", imageLabel: "WEBSITE STRATEGY" },
-  { name: "Website Design",       imageFrom: "oklch(35% 0.04 260)", imageTo: "oklch(15% 0.04 240)", imageLabel: "WEBSITE DESIGN" },
-  { name: "3D Development",       imageFrom: "oklch(35% 0.04 60)",  imageTo: "oklch(15% 0.04 40)",  imageLabel: "3D DEVELOPMENT" },
+  {
+    name: "Brand Strategy",
+    description: "A clear position, story, and roadmap that gives every brand decision a purpose.",
+    imageFrom: "oklch(35% 0.04 30)",
+    imageTo: "oklch(15% 0.04 20)",
+    imageLabel: "BRAND STRATEGY",
+  },
+  {
+    name: "Visual Identity",
+    description: "A distinctive visual system built to stay recognisable, flexible, and consistent.",
+    imageFrom: "oklch(35% 0.04 90)",
+    imageTo: "oklch(15% 0.04 70)",
+    imageLabel: "VISUAL IDENTITY",
+  },
+  {
+    name: "Website Strategy",
+    description: "A focused digital plan that turns audience needs into a clear, persuasive journey.",
+    imageFrom: "oklch(35% 0.04 200)",
+    imageTo: "oklch(15% 0.04 180)",
+    imageLabel: "WEBSITE STRATEGY",
+  },
+  {
+    name: "Website Design",
+    description: "Thoughtful interfaces that make complex ideas simple, useful, and memorable.",
+    imageFrom: "oklch(35% 0.04 260)",
+    imageTo: "oklch(15% 0.04 240)",
+    imageLabel: "WEBSITE DESIGN",
+  },
+  {
+    name: "3D Development",
+    description: "Immersive 3D experiences that add depth, motion, and character without sacrificing performance.",
+    imageFrom: "oklch(35% 0.04 60)",
+    imageTo: "oklch(15% 0.04 40)",
+    imageLabel: "3D DEVELOPMENT",
+  },
 ];
 
-const ROTATION_INTERVAL_MS = 15000;
-
 export function Services() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [selectedService, setSelectedService] = useState(0);
 
   const itemRefs = useRef<Array<HTMLLIElement | null>>([]);
+  const descriptionColRef = useRef<HTMLDivElement>(null);
   const imageColRef = useRef<HTMLDivElement>(null);
 
-  /* Carousel — advances every 15 s. Skipped under prefers-reduced-motion.
-   * The progress bar is a CSS animation that runs in lock-step (see
-   * .services__progress-bar in Services.css). */
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const id = window.setInterval(() => {
-      setActiveIndex((i) => (i + 1) % TESTIMONIALS.length);
-    }, ROTATION_INTERVAL_MS);
-
-    return () => window.clearInterval(id);
-  }, []);
-
-  /* Reset the progress bar's CSS animation whenever the testimonial
-   * changes (either from the 15 s tick or from a manual click), so the
-   * bar always starts filling from 0 % for the freshly-active card. */
+  /* Keep the description and image centred on the active service row.
+   * offsetTop is layout-based, so transforms never feed back into the next
+   * measurement. */
   useLayoutEffect(() => {
-    const bar = document.querySelector<HTMLElement>(
-      `[data-progress-bar-for="${activeIndex}"]`,
-    );
-    if (!bar) return;
-    bar.style.animation = "none";
-    // Force a reflow so the animation restart actually retriggers.
-    void bar.offsetWidth;
-    bar.style.animation = "";
-  }, [activeIndex]);
-
-  /* Keep the floating image centred on the active service row. offsetTop is
-   * layout-based, so an existing transform never feeds back into the next
-   * measurement. ResizeObserver keeps the alignment correct after a font or
-   * viewport resize without running work on every pointer move. */
-  useLayoutEffect(() => {
+    const descriptionCol = descriptionColRef.current;
     const imageCol = imageColRef.current;
-    if (!imageCol) return;
+    if (!descriptionCol || !imageCol) return;
 
-    const alignImage = () => {
-      if (hoveredIndex === null) {
-        imageCol.style.setProperty("--services-image-y", "0px");
-        return;
-      }
-
-      const item = itemRefs.current[hoveredIndex];
+    const alignActiveContent = () => {
+      const item = itemRefs.current[selectedService];
       if (!item) return;
 
-      const y =
-        item.offsetTop +
-        item.offsetHeight / 2 -
-        imageCol.offsetTop -
-        imageCol.offsetHeight / 2;
+      const itemCenter = item.offsetTop + item.offsetHeight / 2;
+      const centerOnItem = (element: HTMLElement, property: string) => {
+        const y = itemCenter - element.offsetTop - element.offsetHeight / 2;
+        element.style.setProperty(property, `${y}px`);
+      };
 
-      imageCol.style.setProperty("--services-image-y", `${y}px`);
+      centerOnItem(descriptionCol, "--services-description-y");
+      centerOnItem(imageCol, "--services-image-y");
     };
 
-    alignImage();
+    alignActiveContent();
 
-    const observer = new ResizeObserver(alignImage);
+    const observer = new ResizeObserver(alignActiveContent);
+    observer.observe(descriptionCol);
     observer.observe(imageCol);
-    const item = hoveredIndex === null ? null : itemRefs.current[hoveredIndex];
+    const item = itemRefs.current[selectedService];
     if (item) observer.observe(item);
 
     return () => observer.disconnect();
-  }, [hoveredIndex]);
+  }, [selectedService]);
 
   return (
     <section className="services" id="services">
       <div className="services__inner">
-        {/* ───── Col 1 — testimonial carousel ───── */}
-        <div className="services__left">
-          <header className="services__header-row">
-            <div
-              className="services__pager"
-              aria-label="Section navigation"
-            >
-              <button
-                type="button"
-                className="services__arrow"
-                aria-label="Previous testimonial"
-                disabled={activeIndex === 0}
-                onClick={() =>
-                  setActiveIndex((i) => Math.max(0, i - 1))
-                }
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <line x1="20" y1="12" x2="4" y2="12" />
-                  <polyline points="10 18 4 12 10 6" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                className="services__arrow"
-                aria-label="Next testimonial"
-                onClick={() =>
-                  setActiveIndex((i) => (i + 1) % TESTIMONIALS.length)
-                }
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <line x1="4" y1="12" x2="20" y2="12" />
-                  <polyline points="14 6 20 12 14 18" />
-                </svg>
-              </button>
-              <span className="services__pager-count" aria-hidden="true">
-                {String(activeIndex + 1).padStart(2, "0")}/
-                {String(TESTIMONIALS.length).padStart(2, "0")}
-              </span>
-            </div>
-          </header>
-
-          <p className="services__label">(REAL CLIENT STORIES)</p>
-
-          <div className="services__quote-area">
-            {TESTIMONIALS.map((t, i) => (
-              <article
-                key={t.author}
-                className={`services__quote ${
-                  i === activeIndex ? "services__quote--active" : ""
-                }`}
-                aria-hidden={i !== activeIndex}
-              >
-                <p className="services__quote-text">&ldquo;{t.quote}&rdquo;</p>
-
-                <div className="services__author">
-                  <div
-                    className="services__avatar"
-                    aria-hidden="true"
-                    style={{
-                      background: `linear-gradient(135deg, ${t.avatarFrom}, ${t.avatarTo})`,
-                    }}
-                  >
-                    {(() => {
-                      const initials = t.author
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .slice(0, 2)
-                        .toUpperCase();
-                      return initials;
-                    })()}
-                  </div>
-                  <div className="services__author-text">
-                    <div className="services__author-name">{t.author}</div>
-                    <div className="services__author-role">{t.role}</div>
-                  </div>
-                </div>
-
-                <div className="services__progress" aria-hidden="true">
-                  <div
-                    className="services__progress-bar"
-                    data-progress-bar-for={i}
-                  />
-                </div>
-              </article>
-            ))}
-          </div>
+        {/* ───── Col 1 — active service description ───── */}
+        <div ref={descriptionColRef} className="services__left">
+          <p className="services__description" aria-live="polite">
+            <strong>{SERVICES[selectedService].name}.</strong>{" "}
+            {SERVICES[selectedService].description}
+          </p>
         </div>
 
         {/* ───── Col 2 — services list ───── */}
@@ -256,12 +128,20 @@ export function Services() {
                   itemRefs.current[i] = el;
                 }}
                 className={`services__item ${
-                  hoveredIndex === i ? "services__item--active" : ""
+                  selectedService === i ? "services__item--active" : ""
                 }`}
-                onMouseEnter={() => setHoveredIndex(i)}
-                onMouseLeave={() => setHoveredIndex(null)}
-                onFocus={() => setHoveredIndex(i)}
-                onBlur={() => setHoveredIndex(null)}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selectedService === i}
+                onMouseEnter={() => setSelectedService(i)}
+                onClick={() => setSelectedService(i)}
+                onFocus={() => setSelectedService(i)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setSelectedService(i);
+                  }
+                }}
               >
                 {s.name}
               </li>
@@ -275,7 +155,7 @@ export function Services() {
             <div
               key={service.name}
               className={`services__hover-image ${
-                hoveredIndex === i ? "services__hover-image--active" : ""
+                selectedService === i ? "services__hover-image--active" : ""
               }`}
               style={{
                 background: `linear-gradient(135deg, ${service.imageFrom}, ${service.imageTo})`,
