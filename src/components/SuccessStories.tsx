@@ -30,6 +30,9 @@ interface Project {
  * image element's own height. The image is rendered taller than the frame
  * (see PARALLAX_OVERSCAN in the CSS) so this slide never exposes an edge. */
 const PARALLAX_SHIFT = 8;
+const SUCCESS_VIDEO = "/videos/success-stories-mammoth.webm";
+const DESKTOP_VIDEO_HOVER =
+  "(min-width: 901px) and (hover: hover) and (pointer: fine)";
 
 const PROJECTS: ReadonlyArray<Project> = [
   {
@@ -77,6 +80,128 @@ function pad2(n: number): string {
 export function SuccessStories() {
   const total = PROJECTS.length;
   const sectionRef = useRef<HTMLElement>(null);
+
+  /* Desktop uses one stable cursor plane: the left 20% pauses playback and
+   * the right 80% plays whichever story is most visible. Mobile keeps the
+   * visibility-only behaviour. Moving through the image/text gap therefore
+   * never interrupts playback, and pausing preserves the current frame. */
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const videos = Array.from(
+      section.querySelectorAll<HTMLVideoElement>("[data-ss-video]"),
+    );
+    const visibility = new Map(videos.map((video) => [video, 0]));
+    const desktopQuery = window.matchMedia(DESKTOP_VIDEO_HOVER);
+    let pointerX = -1;
+    let pointerCanPlay = false;
+
+    const setVideoVisible = (video: HTMLVideoElement, visible: boolean) => {
+      video.classList.toggle("success-stories__video--playing", visible);
+      video
+        .closest(".success-stories__image-figure")
+        ?.classList.toggle(
+          "success-stories__image-figure--video-playing",
+          visible,
+        );
+    };
+
+    const pauseVideo = (video: HTMLVideoElement, reset = false) => {
+      video.pause();
+      setVideoVisible(video, false);
+      if (reset) video.currentTime = 0;
+    };
+
+    const playVideo = (video: HTMLVideoElement) => {
+      if (!video.paused) return;
+      void video.play().catch(() => undefined);
+    };
+
+    const updatePlayback = () => {
+      if (!desktopQuery.matches) {
+        videos.forEach((video) => {
+          if ((visibility.get(video) ?? 0) >= 0.45) playVideo(video);
+          else pauseVideo(video);
+        });
+        return;
+      }
+
+      let focusedVideo: HTMLVideoElement | null = null;
+      let focusedRatio = 0;
+      visibility.forEach((ratio, video) => {
+        if (ratio > focusedRatio) {
+          focusedRatio = ratio;
+          focusedVideo = video;
+        }
+      });
+
+      const target = pointerCanPlay && focusedRatio >= 0.15 ? focusedVideo : null;
+      videos.forEach((video) => {
+        if (video === target) playVideo(video);
+        else pauseVideo(video);
+      });
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const video = entry.target as HTMLVideoElement;
+          visibility.set(video, entry.intersectionRatio);
+          if (!entry.isIntersecting) pauseVideo(video, true);
+        });
+        updatePlayback();
+      },
+      { threshold: Array.from({ length: 11 }, (_, index) => index / 10) },
+    );
+
+    const showVideo = (event: Event) => {
+      const video = event.currentTarget as HTMLVideoElement;
+      setVideoVisible(video, true);
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      pointerX = event.clientX;
+      const nextCanPlay = pointerX > window.innerWidth * 0.2;
+      if (nextCanPlay === pointerCanPlay) return;
+      pointerCanPlay = nextCanPlay;
+      updatePlayback();
+    };
+
+    const onWindowBlur = () => {
+      pointerCanPlay = false;
+      updatePlayback();
+    };
+
+    const onModeChange = () => {
+      pointerCanPlay =
+        desktopQuery.matches && pointerX > window.innerWidth * 0.2;
+      updatePlayback();
+    };
+
+    videos.forEach((video) => {
+      video.addEventListener("playing", showVideo);
+      observer.observe(video);
+    });
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    window.addEventListener("blur", onWindowBlur);
+    desktopQuery.addEventListener("change", onModeChange);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("blur", onWindowBlur);
+      desktopQuery.removeEventListener("change", onModeChange);
+      videos.forEach((video) => {
+        video.pause();
+        video
+          .closest(".success-stories__image-figure")
+          ?.classList.remove("success-stories__image-figure--video-playing");
+        video.removeEventListener("playing", showVideo);
+      });
+    };
+  }, []);
 
   /* Parallax — each image slides vertically inside its fixed frame, scrubbed
    * 1:1 to that frame's travel through the viewport.
@@ -216,6 +341,17 @@ export function SuccessStories() {
                   priority={i === 0}
                 />
               </div>
+              <video
+                className="success-stories__video"
+                data-ss-video=""
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                poster={project.image}
+              >
+                <source src={SUCCESS_VIDEO} type="video/webm" />
+              </video>
             </figure>
 
             <article

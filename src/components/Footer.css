@@ -11,8 +11,8 @@
   background: var(--ink);
 
   width: 100%;
-  padding-block-start: clamp(5rem, 10vw, 10rem);
-  padding-block-end: clamp(0.75rem, 1.5vw, 1.5rem);
+  min-height: 100svh;
+  padding-block: clamp(1.5rem, 3svh, 2.5rem);
 }
 
 .footer__inner {
@@ -25,7 +25,7 @@
    * below). */
   grid-template-columns: minmax(0, 7fr) minmax(0, 13fr);
   column-gap: clamp(2rem, 4vw, 4rem);
-  row-gap: clamp(3rem, 6vw, 6rem);
+  row-gap: clamp(1.5rem, 3vw, 3rem);
   align-items: start;
 }
 
@@ -61,10 +61,10 @@
 
 .footer__nav-link {
   display: block;
-  padding-block: clamp(0.6rem, 1.2vw, 0.9rem);
+  padding-block: clamp(0.45rem, 0.8vw, 0.65rem);
   font-family: var(--font-sans);
   font-weight: 500;
-  font-size: clamp(1rem, 2.2vw, 2rem);
+  font-size: clamp(0.9375rem, 1.5vw, 1.35rem);
   line-height: 1.05;
   letter-spacing: -0.025em;
   text-decoration: none;
@@ -83,7 +83,7 @@
  * footer navigation, so pointer movement near the CTA can attract it. */
 .footer__magnetic-zone {
   position: relative;
-  min-height: clamp(14rem, 28vw, 24rem);
+  min-height: clamp(8rem, 24svh, 13rem);
   display: grid;
   place-items: center;
   color: var(--paper);
@@ -99,7 +99,7 @@
   mix-blend-mode: normal;
   font-family: var(--font-sans);
   font-weight: 400;
-  font-size: clamp(2.75rem, 5.5vw, 5.5rem);
+  font-size: clamp(2rem, 3.8vw, 3.75rem);
   line-height: 1;
   letter-spacing: -0.04em;
   white-space: nowrap;
@@ -147,14 +147,14 @@
 .footer__right-col {
   display: flex;
   flex-direction: column;
-  gap: clamp(3rem, 6vw, 5rem);
+  gap: clamp(1.25rem, 3svh, 2.25rem);
 }
 
 /* Logo video — top of the right column. */
 .footer__logo-wrap {
   position: relative;
   width: 100%;
-  height: clamp(18rem, 32vw, 28rem);
+  height: clamp(12rem, 42svh, 22rem);
 }
 
 .footer__logo-video {
@@ -173,15 +173,9 @@
   align-items: start;
 }
 
-@media (max-width: 700px) {
-  .footer__details-socials {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 .footer__micro-label {
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
 }
@@ -189,6 +183,7 @@
 /* ───── Studio details ───── */
 
 .footer__details {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: clamp(0.75rem, 1.5vw, 1rem);
@@ -199,7 +194,8 @@
   align-items: center;
   gap: var(--space-2xs);
   font-family: var(--font-sans);
-  font-size: clamp(0.9375rem, 1.2vw, 1.0625rem);
+  min-width: 0;
+  font-size: clamp(0.8125rem, 1vw, 0.9375rem);
   line-height: 1.4;
   text-decoration: underline;
   text-decoration-color: color-mix(in oklch, var(--paper) 40%, transparent);
@@ -229,13 +225,14 @@
 
 .footer__email-text {
   text-decoration: inherit;
+  overflow-wrap: anywhere;
 }
 
 .footer__location {
   margin: clamp(0.5rem, 1vw, 0.75rem) 0 0 0;
   font-family: var(--font-sans);
   font-weight: 400;
-  font-size: clamp(0.9375rem, 1.1vw, 1rem);
+  font-size: clamp(0.8125rem, 0.95vw, 0.9375rem);
   line-height: 1.5;
   max-width: 24ch;
 }
@@ -268,7 +265,7 @@
 
   font-family: var(--font-sans);
   font-weight: 500;
-  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  font-size: clamp(1rem, 1.5vw, 1.35rem);
   line-height: 1.1;
   letter-spacing: -0.01em;
   text-decoration: none;
@@ -278,4 +275,69 @@
 .footer__socials-link:hover,
 .footer__socials-link:focus-visible {
   outline: none;
+}
+
+@media (max-width: 900px) {
+  .footer {
+    padding-block: 1rem;
+  }
+
+  .footer__inner {
+    row-gap: 1.25rem;
+  }
+
+  .footer__nav-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .footer__nav-item:nth-child(even) {
+    border-left: 1px solid color-mix(in oklch, var(--paper) 14%, transparent);
+    padding-left: 0.75rem;
+  }
+
+  .footer__nav-item:nth-last-child(-n + 2) {
+    border-bottom: 1px solid color-mix(in oklch, var(--paper) 14%, transparent);
+  }
+
+  .footer__nav-link {
+    font-size: 0.9375rem;
+  }
+
+  .footer__magnetic-zone {
+    min-height: clamp(6rem, 16svh, 8rem);
+  }
+
+  .footer__talk-link {
+    font-size: clamp(2rem, 10vw, 3rem);
+  }
+
+  .footer__right-col {
+    gap: 1rem;
+  }
+
+  .footer__logo-wrap {
+    height: clamp(10rem, 26svh, 13rem);
+  }
+
+  .footer__details-socials {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
+    column-gap: 1rem;
+    row-gap: 1rem;
+  }
+
+  .footer__details,
+  .footer__socials {
+    gap: 0.6rem;
+  }
+
+  .footer__email,
+  .footer__location {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .footer__socials-link {
+    font-size: 0.9375rem;
+  }
 }
